@@ -6,70 +6,88 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is the Site Reliability Specifications (SRS) repository - a collection of technical specifications that define best practices and standards for building reliable, scalable applications and services. The repository contains no executable code, only markdown documentation.
+This is the **Site Reliability Handbook** repository - a comprehensive collection of specifications, patterns, guides, and operational practices for building reliable, scalable applications and services. The repository contains no executable code, only markdown documentation.
 
-## Specification Format
+## Document Types
 
-- Each specification follows the naming pattern: `SRS-XXX Title.md`
-- Specifications support versioning: `SRS-XXX-Y` where Y is the version number
+The repository uses four document type prefixes:
+
+| Prefix | Type | Description |
+|--------|------|-------------|
+| **SRS** | Specifications | Technical requirements that software must conform to |
+| **SRP** | Patterns | Architectural patterns and design solutions |
+| **SRG** | Guides | How-to documentation and implementation guides |
+| **SRO** | Operations | Operational practices and processes |
+
+## Document Format
+
+- Each document follows the naming pattern: `{PREFIX}-XXX Title.md`
+- Documents support versioning: `{PREFIX}-XXX-Y` where Y is the version number
 - Status workflow: DRAFT → PROPOSED → APPROVED → DEPRECATED
 - Written in Russian and English
 
 ## Multilingual Documentation Rules
 
 ### File Naming Conventions
-- **English specifications**: `SRS-XXX Title.md` (default)
-- **Russian specifications**: `SRS-XXX Title.ru.md` (with `.ru.md` extension)
+- **English documents**: `{PREFIX}-XXX Title.md` (default)
+- **Russian documents**: `{PREFIX}-XXX Title.ru.md` (with `.ru.md` extension)
 - **English README**: `README.md`
 - **Russian README**: `README.ru.md`
 
 ### Link Rules
-- **README.md (English)** must link to English specifications (`.md` files)
-- **README.ru.md (Russian)** must link to Russian specifications (`.ru.md` files)
+- **README.md (English)** must link to English documents (`.md` files)
+- **README.ru.md (Russian)** must link to Russian documents (`.ru.md` files)
 - Each README should include a language switcher link at the top:
   - English README: `:ru: [Русская версия](README.ru.md)`
   - Russian README: `:gb: [English version](README.md)`
 
-### Creating Bilingual Specifications
-1. Create the English version first: `SRS-XXX Title.md`
-2. Create the Russian version: `SRS-XXX Title.ru.md`
+### Creating Bilingual Documents
+1. Create the English version first: `{PREFIX}-XXX Title.md`
+2. Create the Russian version: `{PREFIX}-XXX Title.ru.md`
 3. Both files should have the same structure but in respective languages
 4. Update both README files with links to the appropriate language version
 
-### Updating Specifications
+### Updating Documents
 When updating content:
 - Update both language versions to maintain consistency
 - Ensure links in both README files point to correct language versions
 
-## Key Specifications
+## Key Documents
 
-The repository contains 38 specifications covering:
-- **Microservices patterns**: Circuit Breaker (SRS-012), Retry mechanisms (SRS-020), Fallback (SRS-022)
-- **Observability**: Logging (SRS-008), Error Tracking (SRS-009), Liveness Probes (SRS-010, SRS-021)
-- **Reliability**: Graceful Shutdown (SRS-014), Jobs Management (SRS-001), Blocking Timeouts (SRS-015), Idempotency, Rate Limiting
-- **Scalability**: Scaling and State (SRS-003), Deadline Propagation (SRS-017)
-- **DevOps practices**: Versioning (SRS-005, SRS-007), Environment Variables (SRS-004), Stand-Independent Images (SRS-019)
+The repository contains 57 documents:
+
+### SRS - Specifications (20)
+Technical requirements: Stateless Services, Environment Variables, Liveness Probes, Circuit Breaker, Graceful Shutdown, Timeouts, Idempotency, Rate Limiting, Authentication, Authorization
+
+### SRP - Patterns (9)
+Architectural patterns: Jobs Management, Scaling, Load Shedding, Caching, Load Balancing, Auto-scaling, API Gateway, Service Mesh, Materialized Views
+
+### SRG - Guides (19)
+Implementation guides: Metrics, Logging, Error Tracking, Tracing, Alerting, Audit Logging, SLI/SLO/SLA, Database Operations, Feature Flags, Security Monitoring
+
+### SRO - Operations (9)
+Operational practices: On-Call, Chaos Engineering, FinOps, DR, Capacity Planning, Platform Engineering, Database HA, Maintenance, Security
 
 ## Common Tasks
 
-### Creating a New Specification
-1. Create a new file following the naming pattern: `SRS-XXX Title.md`
-2. Start with status DRAFT
-3. Follow the approval process outlined in specs/README.md
+### Creating a New Document
+1. Determine the correct prefix (SRS/SRP/SRG/SRO)
+2. Create a new file following the naming pattern: `{PREFIX}-XXX Title.md`
+3. Start with status DRAFT
+4. Create both English and Russian versions
 
-### Updating Specifications
-- Create a new version by adding version number: `SRS-XXX-Y Title.md`
-- Maintain backward compatibility notes in the specification
-- Update the Google Sheets tracking document mentioned in specs/README.md
+### Updating Documents
+- Create a new version by adding version number: `{PREFIX}-XXX-Y Title.md`
+- Maintain backward compatibility notes in the document
+- Update both README files with any new links
 
-### Reviewing Specifications
-- Check for consistency with existing specifications
+### Reviewing Documents
+- Check for consistency with existing documents
 - Ensure proper status labeling (DRAFT/PROPOSED/APPROVED/DEPRECATED)
-- Verify links between related specifications are correct
+- Verify links between related documents are correct
 
 ## Important Notes
 
 - This is a documentation-only repository - no build or test commands needed
-- Specifications are primarily in Russian with some English content
-- All specifications should reference related specifications when applicable
-- The Google Sheets document mentioned in specs/README.md tracks implementation across services
+- Documents are available in both Russian and English
+- All documents should reference related documents when applicable

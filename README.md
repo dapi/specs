@@ -1,500 +1,166 @@
-# Site Reliability Specifications (SRS)
+# Site Reliability Handbook
 
 :ru: [Русская версия](README.ru.md)
 
-A collection of practical guides for building reliable and observable applications.
+A comprehensive collection of specifications, patterns, guides, and operational practices for building reliable, scalable, and observable software systems.
 
-## Overview
+## Document Types
 
-This repository contains practical guides (specifications) for building reliable and observable applications, based on Site Reliability Engineering best practices.
+| Prefix | Type | Description | Count |
+|--------|------|-------------|-------|
+| **SRS** | Specifications | Technical requirements that software must conform to | 20 |
+| **SRP** | Patterns | Architectural patterns and design solutions | 9 |
+| **SRG** | Guides | How-to documentation and implementation guides | 19 |
+| **SRO** | Operations | Operational practices and processes | 9 |
 
-**Main categories:**
+**Total: 57 documents**
 
-- **Reliability**: Circuit Breaker, Retry, Graceful Shutdown, Jobs Management, Idempotency, Rate Limiting
-- **Observability**: Logging, Error Tracking, Liveness Probes, Versioning
-- **Scalability**: Scaling, Load Shedding, Load Balancing, Deadlines
-- **DevOps practices**: Configuration, Environment Variables, Stand-Independent Images
+---
 
-## Repository Structure
+## SRS - Specifications (20)
 
-- `specs/` - directory with all specifications
+Technical requirements that define what software systems must implement.
 
-## Specifications Catalog
+| ID | Title | Priority | Roles |
+|----|-------|----------|-------|
+| [SRS-001](specs/SRS-001%20Stateless%20Services.md) | Stateless Services | P1 | Developer, Architect |
+| [SRS-002](specs/SRS-002%20Environment%20Variables.md) | Environment Variables | P1 | Developer, DevOps |
+| [SRS-003](specs/SRS-003%20Application%20Versioning.md) | Application Versioning | P2 | Developer, DevOps |
+| [SRS-004](specs/SRS-004%20Expose%20Application%20Version.md) | Expose Application Version | P2 | Developer |
+| [SRS-005](specs/SRS-005%20Liveness%20Probes.md) | Liveness Probes | P1 | Developer, SRE |
+| [SRS-006](specs/SRS-006%20Liveness%20Probes%20Command.md) | Liveness Probes Command | P2 | Developer, SRE |
+| [SRS-007](specs/SRS-007%20Circuit%20Breaker.md) | Circuit Breaker | P1 | Developer, Architect |
+| [SRS-008](specs/SRS-008%20Graceful%20Shutdown.md) | Graceful Shutdown | P1 | Developer |
+| [SRS-009](specs/SRS-009%20Blocking%20Timeouts.md) | Blocking Timeouts | P1 | Developer |
+| [SRS-010](specs/SRS-010%20Request%20Idempotency.md) | Request Idempotency | P1 | Developer, Architect |
+| [SRS-011](specs/SRS-011%20Deadline%20Propagation.md) | Deadline Propagation | P2 | Developer, Architect |
+| [SRS-012](specs/SRS-012%20Stand-Independent%20Images.md) | Stand-Independent Images | P1 | Developer, DevOps |
+| [SRS-013](specs/SRS-013%20Retry%20Pattern.md) | Retry Pattern | P1 | Developer |
+| [SRS-014](specs/SRS-014%20Fallback.md) | Fallback | P2 | Developer, Architect |
+| [SRS-015](specs/SRS-015%20Bulkhead%20Pattern.md) | Bulkhead Pattern | P2 | Developer, Architect |
+| [SRS-016](specs/SRS-016%20Rate%20Limiting.md) | Rate Limiting | P1 | Developer, Architect |
+| [SRS-017](specs/SRS-017%20Database%20Connection%20Pooling.md) | Database Connection Pooling | P1 | Developer, DBA |
+| [SRS-018](specs/SRS-018%20Secrets%20Management.md) | Secrets Management | P1 | Developer, DevOps, Security |
+| [SRS-019](specs/SRS-019%20Service%20Authentication.md) | Service Authentication | P1 | Developer, Security |
+| [SRS-020](specs/SRS-020%20Authorization%20Pattern.md) | Authorization Pattern | P1 | Developer, Security |
 
-### Reliability
+---
 
-| Specification | Priority | Complexity | Role | Complexity Rationale |
-|---------------|----------|------------|------|---------------------|
-| [SRS-001 Jobs Management](specs/SRS-001%20Jobs%20Management.md) | P1 | Medium | Dev | Requires understanding of background tasks and edge case handling |
-| [SRS-010 Liveness Probes](specs/SRS-010%20Liveness%20Probes.md) | P1 | Low | Dev/DevOps | Basic health check in Kubernetes |
-| [SRS-014 Graceful Shutdown](specs/SRS-014%20Graceful%20Shutdown.md) | P1 | Medium | Dev | Requires signal handling and request completion |
-| [SRS-002 Stateless Services](specs/SRS-002%20Stateless%20Services.md) | P2 | Medium | Architect | Requires architectural decisions for state storage |
-| [SRS-003 Scaling and State](specs/SRS-003%20Scaling%20and%20State.md) | P2 | High | Architect | Important for understanding scaling architectural constraints |
-| [SRS-015 Blocking Timeouts](specs/SRS-015%20Blocking%20Timeouts.md) | P2 | Low | Dev | Simple timeout configuration |
-| [SRS-016 Request Idempotency](specs/SRS-016%20Request%20Idempotency.md) | P2 | Medium | Dev | Requires implementation of idempotent operations at API level |
-| [SRS-017 Deadline Propagation](specs/SRS-017%20Deadline%20Propagation.md) | P2 | Medium | Dev | Requires deadline propagation between services |
-| [SRS-013 Load Shedding](specs/SRS-013%20Load%20Shedding.md) | P2/P3 | Medium | Architect | Advanced overload protection |
-| [SRS-018 Distributed Caching](specs/SRS-018%20Distributed%20Caching.md) | P2 | High | Dev | Requires caching layer setup and consistency management |
-| [SRS-020 Retryier](specs/SRS-020%20Retryier.md) | P2 | Medium | Dev | Requires exponential backoff and jitter implementation |
-| [SRS-022 Fallback](specs/SRS-022%20Fallback.md) | P2 | Medium | Dev | Requires graceful degradation implementation |
-| [SRS-023 Load Balancing Patterns](specs/SRS-023%20Load%20Balancing%20Patterns.md) | P2 | Medium | Architect | Requires load balancer configuration |
-| [SRS-024 Auto-scaling](specs/SRS-024%20Auto-scaling.md) | P2 | High | DevOps | Requires auto-scaling rules and metrics monitoring setup |
-| [SRS-027 Rate Limiting](specs/SRS-027%20Rate%20Limiting.md) | P2 | Medium | Dev | Requires rate limiter and counter storage setup |
-| [SRS-025 Bulkhead Pattern](specs/SRS-025%20Bulkhead%20Pattern.md) | P3 | High | Dev | Advanced resource isolation, requires architectural decisions |
+## SRP - Patterns (9)
 
-### Security
+Architectural patterns and proven design solutions for common problems.
 
-| Specification | Priority | Complexity | Role | Complexity Rationale |
-|---------------|----------|------------|------|---------------------|
-| [SRS-029 Secrets Management](specs/SRS-029%20Secrets%20Management.md) | P2 | Medium | Dev/DevOps | Requires integration with Vault or cloud Secret Manager |
-| [SRS-031 Audit Logging](specs/SRS-031%20Audit%20Logging.md) | P2 | Medium | Dev | Requires structured logging and storage setup |
-| [SRS-040 Service Authentication](specs/SRS-040%20Service%20Authentication.md) | P2 | Medium | Dev | Requires JWT/OAuth2 implementation and secrets management |
-| [SRS-041 Authorization Pattern](specs/SRS-041%20Authorization%20Pattern.md) | P2 | Medium | Dev | Requires RBAC or Policy-based access control implementation |
+| ID | Title | Priority | Roles |
+|----|-------|----------|-------|
+| [SRP-001](specs/SRP-001%20Jobs%20Management.md) | Jobs Management | P2 | Developer, Architect |
+| [SRP-002](specs/SRP-002%20Scaling%20and%20State.md) | Scaling and State | P1 | Architect, SRE |
+| [SRP-003](specs/SRP-003%20Load%20Shedding.md) | Load Shedding | P2 | Developer, Architect |
+| [SRP-004](specs/SRP-004%20Distributed%20Caching.md) | Distributed Caching | P2 | Developer, Architect |
+| [SRP-005](specs/SRP-005%20Load%20Balancing.md) | Load Balancing | P1 | Architect, SRE |
+| [SRP-006](specs/SRP-006%20Auto-scaling.md) | Auto-scaling | P2 | SRE, DevOps |
+| [SRP-007](specs/SRP-007%20API%20Gateway.md) | API Gateway | P2 | Architect, Developer |
+| [SRP-008](specs/SRP-008%20Service%20Mesh.md) | Service Mesh | P3 | Architect, SRE |
+| [SRP-009](specs/SRP-009%20Materialized%20Views.md) | Materialized Views & Caching | P2 | Developer, DBA |
 
-### Observability
+---
 
-| Specification | Priority | Complexity | Role | Complexity Rationale |
-|---------------|----------|------------|------|---------------------|
-| [SRS-004 Environment Variables Usage](specs/SRS-004%20Environment%20Variables%20Usage.md) | P1 | Low | Dev/DevOps | Transitioning to env vars configuration |
-| [SRS-005 Application Versioning](specs/SRS-005%20Application%20Versioning.md) | P1 | Low | Dev/DevOps | Adding version to build via CI/CD |
-| [SRS-007 Expose Application Version](specs/SRS-007%20Expose%20Application%20Version.md) | P1 | Low | Dev | Adding /version endpoint |
-| [SRS-008 Logging](specs/SRS-008%20Logging.md) | P1 | Low | Dev | Simple integration with logging libraries |
-| [SRS-009 Error Tracking](specs/SRS-009%20Error%20Tracking.md) | P1 | Low | Dev | Integration with Sentry/Rollbar |
-| [SRS-021 Liveness probes over command](specs/SRS-021%20Liveness%20probes%20over%20command.md) | P1 | Low | Dev/DevOps | Configuring liveness probes via command |
-| [SRS-006 Metrics Collection](specs/SRS-006%20Metrics%20Collection.md) | P2 | Low | Dev/SRE | Setting up metrics collection (Prometheus/Grafana) |
-| [SRS-012 Circuit Breaker](specs/SRS-012%20Circuit%20Breaker.md) | P2 | Medium | Dev | Requires Circuit Breaker pattern implementation and threshold configuration |
-| [SRS-026 Alerting Rules](specs/SRS-026%20Alerting%20Rules.md) | P2 | Low | SRE | Setting up alerting rules in Prometheus/Grafana |
-| [SRS-032 SLI/SLO/SLA](specs/SRS-032%20SLI%20SLO%20SLA.md) | P2 | Medium | Architect | Requires SLI definition and SLO calculation |
-| [SRS-019 Stand-Independent Images](specs/SRS-019%20Stand-Independent%20Images.md) | P2 | Medium | DevOps | Preparing containers without host dependencies |
-| [SRS-011 Distributed Tracing](specs/SRS-011%20Distributed%20Tracing.md) | P3 | High | Architect | Requires Jaeger/Zipkin integration and instrumentation of all services |
-| [SRS-033 Synthetic Monitoring](specs/SRS-033%20Synthetic%20Monitoring.md) | P3 | Medium | SRE | Setting up synthetic checks and locations |
+## SRG - Guides (19)
 
-### DevOps & Operations
+Implementation guides and how-to documentation for specific topics.
 
-| Specification | Priority | Complexity | Role | Complexity Rationale |
-|---------------|----------|------------|------|---------------------|
-| [SRS-036 Backup & Recovery](specs/SRS-036%20Backup%20&%20Recovery.md) | P1 | Medium | DevOps | Requires backup and recovery setup |
-| [SRS-034 On-Call & Incident Response](specs/SRS-034%20On-Call%20&%20Incident%20Response.md) | P2 | Medium | SRE | Requires rotation, escalation policies, and runbooks setup |
-| [SRS-035 Database Migrations](specs/SRS-035%20Database%20Migrations.md) | P2 | High | Dev/DBA | Requires migration framework setup and rollback testing |
-| [SRS-042 Feature Flags](specs/SRS-042%20Feature%20Flags.md) | P2 | Medium | Dev | Feature management without deployment, canary releases |
-| [SRS-043 Chaos Engineering](specs/SRS-043%20Chaos%20Engineering.md) | P2 | High | SRE | Requires Chaos Mesh/Litmus setup and Game Days |
-| [SRS-044 Service Mesh](specs/SRS-044%20Service%20Mesh.md) | P2 | High | Architect | Requires Istio/Linkerd setup and traffic management understanding |
-| [SRS-045 Cost Optimization & FinOps](specs/SRS-045%20Cost%20Optimization%20&%20FinOps.md) | P2 | Medium | FinOps/SRE | Cloud cost management, tagging, budgeting |
-| [SRS-046 Multi-Region DR](specs/SRS-046%20Multi-Region%20DR.md) | P2 | High | Architect | RTO/RPO, cross-region replication, failover strategies |
-| [SRS-047 Capacity Planning](specs/SRS-047%20Capacity%20Planning.md) | P2 | Medium | SRE | Load forecasting, bottleneck analysis, performance baseline |
-| [SRS-048 Security Monitoring](specs/SRS-048%20Security%20Monitoring.md) | P1 | High | Security/SRE | SIEM, threat detection, runtime security, compliance monitoring |
+| ID | Title | Priority | Roles |
+|----|-------|----------|-------|
+| [SRG-001](specs/SRG-001%20Metrics%20Collection.md) | Metrics Collection | P1 | Developer, SRE |
+| [SRG-002](specs/SRG-002%20Logging.md) | Logging | P1 | Developer, SRE |
+| [SRG-003](specs/SRG-003%20Error%20Tracking.md) | Error Tracking | P1 | Developer, SRE |
+| [SRG-004](specs/SRG-004%20Distributed%20Tracing.md) | Distributed Tracing | P1 | Developer, SRE |
+| [SRG-005](specs/SRG-005%20Alerting%20Rules.md) | Alerting Rules | P1 | SRE, DevOps |
+| [SRG-006](specs/SRG-006%20Audit%20Logging.md) | Audit Logging | P2 | Developer, Security |
+| [SRG-007](specs/SRG-007%20SLI%20SLO%20SLA.md) | SLI, SLO, SLA | P1 | SRE, Product |
+| [SRG-008](specs/SRG-008%20Synthetic%20Monitoring.md) | Synthetic Monitoring | P2 | SRE |
+| [SRG-009](specs/SRG-009%20Database%20Migrations.md) | Database Migrations | P1 | Developer, DBA |
+| [SRG-010](specs/SRG-010%20Backup%20Recovery.md) | Backup & Recovery | P1 | DBA, SRE |
+| [SRG-011](specs/SRG-011%20Feature%20Flags.md) | Feature Flags | P2 | Developer, Product |
+| [SRG-012](specs/SRG-012%20Security%20Monitoring.md) | Security Monitoring | P1 | Security, SRE |
+| [SRG-013](specs/SRG-013%20Database%20Replication.md) | Database Replication | P1 | DBA |
+| [SRG-014](specs/SRG-014%20Database%20Monitoring.md) | Database Monitoring | P1 | DBA, SRE |
+| [SRG-015](specs/SRG-015%20Query%20Optimization.md) | Query Optimization | P2 | Developer, DBA |
+| [SRG-016](specs/SRG-016%20Database%20Sharding.md) | Database Sharding | P3 | DBA, Architect |
+| [SRG-017](specs/SRG-017%20Table%20Partitioning.md) | Table Partitioning | P2 | DBA |
+| [SRG-018](specs/SRG-018%20Read%20Replicas.md) | Read Replicas | P2 | DBA, Architect |
+| [SRG-019](specs/SRG-019%20Database%20Performance%20Tuning.md) | Database Performance Tuning | P2 | DBA |
 
-### Database Administration (DBA)
+---
 
-| Specification | Priority | Complexity | Role | Complexity Rationale |
-|---------------|----------|------------|------|---------------------|
-| [SRS-028 Database Connection Pooling](specs/SRS-028%20Database%20Connection%20Pooling.md) | P2 | Medium | Dev/DBA | Requires connection pool setup and load understanding |
-| [SRS-052 Database Replication](specs/SRS-052%20Database%20Replication.md) | P2 | High | DBA | Requires PostgreSQL/MySQL replication setup and monitoring |
-| [SRS-053 Database Monitoring](specs/SRS-053%20Database%20Monitoring.md) | P1 | Medium | DBA | Requires metrics collection and alerting setup |
-| [SRS-054 Query Optimization](specs/SRS-054%20Query%20Optimization.md) | P2 | Medium | Dev/DBA | Requires EXPLAIN ANALYZE and index tuning knowledge |
-| [SRS-055 Database High Availability](specs/SRS-055%20Database%20High%20Availability.md) | P2 | High | DBA | Requires Patroni/etcd setup and failover procedures |
-| [SRS-056 Database Sharding](specs/SRS-056%20Database%20Sharding.md) | P3 | High | DBA/Architect | Requires sharding strategy design and cross-shard handling |
-| [SRS-057 Table Partitioning](specs/SRS-057%20Table%20Partitioning.md) | P2 | Medium | DBA | Requires partition strategy and maintenance automation |
-| [SRS-058 Read Replicas & Load Balancing](specs/SRS-058%20Read%20Replicas.md) | P2 | Medium | DBA | Requires replica setup and lag-aware routing |
-| [SRS-059 Database Maintenance](specs/SRS-059%20Database%20Maintenance.md) | P2 | Medium | DBA | Requires VACUUM, ANALYZE, and bloat management |
-| [SRS-060 Database Security](specs/SRS-060%20Database%20Security.md) | P1 | High | DBA/Security | Requires authentication, encryption, and auditing setup |
-| [SRS-061 Database Performance Tuning](specs/SRS-061%20Database%20Performance%20Tuning.md) | P2 | High | DBA | Requires memory, WAL, and OS tuning knowledge |
-| [SRS-062 Materialized Views & Caching](specs/SRS-062%20Materialized%20Views%20&%20Caching.md) | P2 | Medium | Dev/DBA | Requires materialized view management and cache invalidation |
+## SRO - Operations (9)
 
-### Implementation Status
+Operational practices, processes, and procedures for running reliable systems.
 
-- **Total specifications in repository**: 57
-- **Coverage**: 100%
+| ID | Title | Priority | Roles |
+|----|-------|----------|-------|
+| [SRO-001](specs/SRO-001%20On-Call%20Incident%20Response.md) | On-Call & Incident Response | P1 | SRE, DevOps |
+| [SRO-002](specs/SRO-002%20Chaos%20Engineering.md) | Chaos Engineering | P2 | SRE |
+| [SRO-003](specs/SRO-003%20Cost%20Optimization%20FinOps.md) | Cost Optimization & FinOps | P2 | SRE, Finance |
+| [SRO-004](specs/SRO-004%20Multi-Region%20DR.md) | Multi-Region DR | P1 | Architect, SRE |
+| [SRO-005](specs/SRO-005%20Capacity%20Planning.md) | Capacity Planning | P2 | SRE, Architect |
+| [SRO-006](specs/SRO-006%20Platform%20Engineering.md) | Platform Engineering | P2 | SRE, Architect |
+| [SRO-007](specs/SRO-007%20Database%20High%20Availability.md) | Database High Availability | P1 | DBA, SRE |
+| [SRO-008](specs/SRO-008%20Database%20Maintenance.md) | Database Maintenance | P1 | DBA |
+| [SRO-009](specs/SRO-009%20Database%20Security.md) | Database Security | P1 | DBA, Security |
+
+---
+
+## Priority Levels
+
+| Priority | Description | Documents |
+|----------|-------------|-----------|
+| **P1** | Critical - Must implement | 32 |
+| **P2** | Important - Should implement | 22 |
+| **P3** | Nice to have | 3 |
+
+---
+
+## Role Summaries
 
 ### Developer Summary
-
-**Must study:**
-- Reliability patterns: [Circuit Breaker](specs/SRS-012%20Circuit%20Breaker.md), [Retry](specs/SRS-020%20Retryier.md), [Fallback](specs/SRS-022%20Fallback.md), [Bulkhead](specs/SRS-025%20Bulkhead%20Pattern.md), [Timeouts](specs/SRS-015%20Blocking%20Timeouts.md)
-- Data handling: [Idempotency](specs/SRS-016%20Request%20Idempotency.md), [Caching](specs/SRS-018%20Distributed%20Caching.md), [Connection Pooling](specs/SRS-028%20Database%20Connection%20Pooling.md), [Migrations](specs/SRS-035%20Database%20Migrations.md)
-- Observability: [Logging](specs/SRS-008%20Logging.md), [Error Tracking](specs/SRS-009%20Error%20Tracking.md), [Audit Logging](specs/SRS-031%20Audit%20Logging.md)
-- Security: [Authentication](specs/SRS-040%20Service%20Authentication.md), [Authorization](specs/SRS-041%20Authorization%20Pattern.md)
-- Lifecycle: [Graceful Shutdown](specs/SRS-014%20Graceful%20Shutdown.md), [Deadline Propagation](specs/SRS-017%20Deadline%20Propagation.md)
-
-**Good to know:**
-- [Jobs](specs/SRS-001%20Jobs%20Management.md), [Probes](specs/SRS-010%20Liveness%20Probes.md), [Metrics](specs/SRS-006%20Metrics%20Collection.md), [Secrets](specs/SRS-029%20Secrets%20Management.md), [Versioning](specs/SRS-005%20Application%20Versioning.md), [Environment Variables](specs/SRS-004%20Environment%20Variables%20Usage.md)
+Essential specifications for application developers:
+- **Reliability**: [SRS-001](specs/SRS-001%20Stateless%20Services.md), [SRS-007](specs/SRS-007%20Circuit%20Breaker.md), [SRS-008](specs/SRS-008%20Graceful%20Shutdown.md), [SRS-009](specs/SRS-009%20Blocking%20Timeouts.md), [SRS-013](specs/SRS-013%20Retry%20Pattern.md)
+- **Observability**: [SRG-001](specs/SRG-001%20Metrics%20Collection.md), [SRG-002](specs/SRG-002%20Logging.md), [SRG-003](specs/SRG-003%20Error%20Tracking.md), [SRG-004](specs/SRG-004%20Distributed%20Tracing.md)
+- **Configuration**: [SRS-002](specs/SRS-002%20Environment%20Variables.md), [SRS-003](specs/SRS-003%20Application%20Versioning.md)
+- **Security**: [SRS-018](specs/SRS-018%20Secrets%20Management.md), [SRS-019](specs/SRS-019%20Service%20Authentication.md), [SRS-020](specs/SRS-020%20Authorization%20Pattern.md)
 
 ### Architect Summary
+Key patterns for system architects:
+- **Resilience**: [SRS-007](specs/SRS-007%20Circuit%20Breaker.md), [SRS-015](specs/SRS-015%20Bulkhead%20Pattern.md), [SRS-014](specs/SRS-014%20Fallback.md), [SRP-003](specs/SRP-003%20Load%20Shedding.md)
+- **Scalability**: [SRP-002](specs/SRP-002%20Scaling%20and%20State.md), [SRP-005](specs/SRP-005%20Load%20Balancing.md), [SRP-006](specs/SRP-006%20Auto-scaling.md)
+- **Integration**: [SRP-007](specs/SRP-007%20API%20Gateway.md), [SRP-008](specs/SRP-008%20Service%20Mesh.md)
 
-**Must study:**
-- State architecture: [Stateless Services](specs/SRS-002%20Stateless%20Services.md), [Scaling and State](specs/SRS-003%20Scaling%20and%20State.md)
-- System protection: [Load Shedding](specs/SRS-013%20Load%20Shedding.md), [Load Balancing](specs/SRS-023%20Load%20Balancing%20Patterns.md), [API Gateway](specs/SRS-038%20API%20Gateway.md)
-- Observability: [Distributed Tracing](specs/SRS-011%20Distributed%20Tracing.md), [SLI/SLO/SLA](specs/SRS-032%20SLI%20SLO%20SLA.md)
-
-**Good to know:**
-- All developer specifications (for code review and technical leadership)
-- [Auto-scaling](specs/SRS-024%20Auto-scaling.md), [Backups](specs/SRS-036%20Backup%20&%20Recovery.md)
-
-### SRE/DevOps Summary
-
-**Must study:**
-- Infrastructure: [Auto-scaling](specs/SRS-024%20Auto-scaling.md), [Stand-Independent Images](specs/SRS-019%20Stand-Independent%20Images.md), [Backups](specs/SRS-036%20Backup%20&%20Recovery.md)
-- Monitoring: [Alerting Rules](specs/SRS-026%20Alerting%20Rules.md), [Synthetic Monitoring](specs/SRS-033%20Synthetic%20Monitoring.md), [Metrics](specs/SRS-006%20Metrics%20Collection.md)
-- Processes: [On-Call & Incident Response](specs/SRS-034%20On-Call%20&%20Incident%20Response.md), [SLI/SLO/SLA](specs/SRS-032%20SLI%20SLO%20SLA.md)
-- Security: [Secrets Management](specs/SRS-029%20Secrets%20Management.md)
-
-**Good to know:**
-- [Probes](specs/SRS-010%20Liveness%20Probes.md), [Environment Variables](specs/SRS-004%20Environment%20Variables%20Usage.md), [Versioning](specs/SRS-005%20Application%20Versioning.md)
-- Reliability patterns (to understand application behavior): [Circuit Breaker](specs/SRS-012%20Circuit%20Breaker.md), [Retry](specs/SRS-020%20Retryier.md), [Graceful Shutdown](specs/SRS-014%20Graceful%20Shutdown.md)
+### SRE Summary
+Operations-focused documentation:
+- **Monitoring**: [SRG-001](specs/SRG-001%20Metrics%20Collection.md), [SRG-005](specs/SRG-005%20Alerting%20Rules.md), [SRG-007](specs/SRG-007%20SLI%20SLO%20SLA.md), [SRG-008](specs/SRG-008%20Synthetic%20Monitoring.md)
+- **Incident Management**: [SRO-001](specs/SRO-001%20On-Call%20Incident%20Response.md), [SRO-002](specs/SRO-002%20Chaos%20Engineering.md)
+- **Reliability**: [SRO-004](specs/SRO-004%20Multi-Region%20DR.md), [SRO-005](specs/SRO-005%20Capacity%20Planning.md)
 
 ### DBA Summary
-
-**Must study:**
-- Core database: [Connection Pooling](specs/SRS-028%20Database%20Connection%20Pooling.md), [Replication](specs/SRS-052%20Database%20Replication.md), [High Availability](specs/SRS-055%20Database%20High%20Availability.md)
-- Performance: [Query Optimization](specs/SRS-054%20Query%20Optimization.md), [Performance Tuning](specs/SRS-061%20Database%20Performance%20Tuning.md), [Materialized Views](specs/SRS-062%20Materialized%20Views%20&%20Caching.md)
-- Operations: [Monitoring](specs/SRS-053%20Database%20Monitoring.md), [Maintenance](specs/SRS-059%20Database%20Maintenance.md), [Migrations](specs/SRS-035%20Database%20Migrations.md)
-- Security: [Database Security](specs/SRS-060%20Database%20Security.md)
-
-**Good to know:**
-- Advanced patterns: [Sharding](specs/SRS-056%20Database%20Sharding.md), [Partitioning](specs/SRS-057%20Table%20Partitioning.md), [Read Replicas](specs/SRS-058%20Read%20Replicas.md)
-- Related specs: [Backup & Recovery](specs/SRS-036%20Backup%20&%20Recovery.md), [Distributed Caching](specs/SRS-018%20Distributed%20Caching.md)
-
-## How to Use
-
-Each specification has a numbering format `SRS-XXX`, where XXX is a sequential number. Each specification contains specific recommendations and best practices that can be implemented in your services independently.
-
-Specification statuses:
-- `DRAFT` - under development
-- `PROPOSED` - proposed for adoption
-- `APPROVED` - approved and recommended for use
-- `DEPRECATED` - not recommended for use
+Database administration resources:
+- **Performance**: [SRG-015](specs/SRG-015%20Query%20Optimization.md), [SRG-019](specs/SRG-019%20Database%20Performance%20Tuning.md), [SRP-009](specs/SRP-009%20Materialized%20Views.md)
+- **Availability**: [SRG-013](specs/SRG-013%20Database%20Replication.md), [SRO-007](specs/SRO-007%20Database%20High%20Availability.md), [SRG-018](specs/SRG-018%20Read%20Replicas.md)
+- **Operations**: [SRG-009](specs/SRG-009%20Database%20Migrations.md), [SRG-010](specs/SRG-010%20Backup%20Recovery.md), [SRO-008](specs/SRO-008%20Database%20Maintenance.md)
+- **Security**: [SRO-009](specs/SRO-009%20Database%20Security.md)
+- **Scaling**: [SRG-016](specs/SRG-016%20Database%20Sharding.md), [SRG-017](specs/SRG-017%20Table%20Partitioning.md)
 
 ---
 
-## Practical Implementation Recommendations
+## Industry Standards & Resources
 
-### Phase 1: Week 1-2 (MVP Launch)
-
-**Goal:** Launch a basic production-ready service
-
-```bash
-# Implementation order for the first week:
-1. SRS-004 (Environment Variables) - Configuration setup
-2. SRS-005/007 (Versioning) - Application versioning
-3. SRS-008 (Logging) - Basic logging
-4. SRS-010/021 (Health Checks) - Health checks
-5. SRS-014 (Graceful Shutdown) - Proper shutdown
-6. SRS-009 (Error Tracking) - Error tracking
-
-# Implementation order for the second week:
-7. SRS-001 (Jobs Management) - Background tasks
-8. SRS-036 (Backups) - Basic backups
-9. SRS-006 (Metrics) - Basic metrics
-10. SRS-026 (Alerting) - Basic alerts
-```
-
-### Phase 2: Week 3-8 (Production Hardening)
-
-**Goal:** Make the service reliable and secure
-
-```bash
-# Weeks 3-4: Security and access
-1. SRS-040/041 (Auth) - Basic authentication
-2. SRS-029 (Secrets) - Secrets management
-3. SRS-027 (Rate Limiting) - Overload protection
-
-# Weeks 5-6: Reliability
-4. SRS-012 (Circuit Breaker) - Cascading failure protection
-5. SRS-020 (Retry) - Automatic recovery
-6. SRS-015 (Timeouts) - Hang prevention
-7. SRS-022 (Fallback) - Graceful degradation
-
-# Weeks 7-8: Monitoring and operations
-8. SRS-032 (SLI/SLO/SLA) - Reliability definition
-9. SRS-003/002 (State) - Scalability design
-10. SRS-035 (Migrations) - If schema changes are needed
-```
-
-### Phase 3: Month 3+ (Optimization)
-
-**Goal:** Optimize performance and operational efficiency
-
-```bash
-# Streaming optimization as needed
-- SRS-018 (Caching) - When performance issues arise
-- SRS-024 (Auto-scaling) - When load becomes variable
-- SRS-028 (Connection Pooling) - When DB becomes a bottleneck
-- SRS-033 (Synthetic Monitoring) - Proactive detection
-- SRS-011 (Tracing) - When system complexity >3 services
-```
+- [Google SRE Books](https://sre.google/books/)
+- [The Twelve-Factor App](https://12factor.net/)
+- [Cloud Native Computing Foundation](https://www.cncf.io/)
+- [OpenTelemetry](https://opentelemetry.io/)
+- [Prometheus](https://prometheus.io/)
 
 ---
 
-## Product Maturity Levels
+## License
 
-### Level 1: MVP (Minimum Viable Product)
-**Required:** Priority 1 (10 specifications)
-- Basic infrastructure and monitoring
-- Proper shutdown and versioning
-- Critical data backups
-
-### Level 2: Production-Ready
-**Required:** Priority 1 + Priority 2 (33 specifications)
-- All Priority 1
-- Security and access control
-- Reliability and fault tolerance
-- Metrics and monitoring
-- Operational procedures
-
-### Level 3: Enterprise-Ready
-**Required:** Priority 1 + Priority 2 + Priority 3 (39 specifications)
-- All specifications
-- Advanced optimization
-- Proactive monitoring
-- Advanced analytics
-- Complete coverage of all aspects
-
----
-
-## Team Implementation Examples
-
-### Startup (2 engineers, 3 months)
-- **Weeks 1-3:** Priority 1 (Core infrastructure)
-- **Weeks 4-10:** Priority 2 (Security, reliability)
-- **Weeks 11-12:** Priority 3 (Optimization of the most painful areas)
-
-### Small Team (5 engineers, 2 months)
-- **Weeks 1-2:** Priority 1 (In parallel)
-- **Weeks 3-8:** Priority 2 (Distributed across services)
-- **Weeks 9-10:** Priority 3 (As needed)
-
-### Enterprise Team (20+ engineers)
-- **Weeks 1-2:** Priority 1 (All teams in parallel)
-- **Weeks 3-6:** Priority 2 (Distributed across domains)
-- **Weeks 7+:** Priority 3 (Continuous optimization process)
-
----
-
-## Priority Summary Map
-
-```
-Priority 1 (Critical - 12 specs)
-├─ Logging, Error Tracking, Health Checks
-├─ Versioning, Environment Variables
-├─ Graceful Shutdown, Jobs Management
-├─ Basic Backups, Basic Metrics
-└─ Database Monitoring, Database Security
-
-Priority 2 (Important - 38 specs)
-├── Security (5)
-├── Reliability (8)
-├── Data & State (5)
-├── Infrastructure (4)
-└── Database Administration (10)
-
-Priority 3 (Nice to have - 7 specs)
-├── Performance (3)
-├── Analytics (2)
-├── Platform Engineering (1)
-└── Database Sharding (1)
-
-Total: 57 specifications
-```
-
----
-
-## Improvement Areas and Recommendations
-
-### Catalog Maturity Analysis (by Senior SRE Engineer)
-
-**Overall rating: 8.5/10** - The catalog demonstrates a high level of maturity and practicality, close to industry-leading standards.
-
-#### Strengths
-
-1. **Complete coverage of core SRE practices (85%)**
-   - 39 specifications cover reliability, observability, security, operations
-   - Production-ready examples with specific numbers and formulas
-
-2. **Exceptional depth of key specifications**
-   - **SRS-032 SLI/SLO/SLA** (713 lines): Error Budget formulas, Burn Rate Alerts, industry comparisons
-   - **SRS-035 Database Migrations** (698 lines): Expand/Contract pattern, 6 frameworks, zero-downtime
-   - **SRS-036 Backup & Recovery** (849 lines): 3-2-1 rule, cost optimization, RTO/RPO
-   - **SRS-034 On-Call & Incident Response** (697 lines): Sev1-4 classification, runbooks, postmortems
-   - **SRS-038 API Gateway** (680 lines): Multi-layer architecture, BFF pattern, platform comparison
-
-3. **Practicality: ready-to-use scripts**
-   - Backup verification: `pg_restore --list backup.dump | head -10`
-   - Pre-shift checklist: laptop, VPN, monitoring access
-   - Safe migrations: `backup -> migrate -> smoke tests -> rollback if failed`
-
-4. **Specific numbers and SLAs**
-   - Sev1: <5 min response, 4h resolution
-   - Rate limiting: 1000 req/min, burst=20
-   - Error Budget: 0.1% for 99.9% SLO = 43m 49s/month
-
-#### Gaps and Extension Recommendations
-
-**Priority 1 (Critical - for level 5 Optimizing):**
-
-1. ~~**SRS-042 Feature Flags & Toggles**~~ ✅ CREATED
-   - Rollback without deployment, A/B testing, Canary releases, Gradual rollout
-
-2. ~~**SRS-043 Chaos Engineering**~~ ✅ CREATED
-   - Fault injection, Chaos Mesh/Litmus, Game Days, Automated experiments
-
-3. ~~**SRS-044 Service Mesh**~~ ✅ CREATED
-   - Istio/Linkerd, mTLS, Traffic management, Observability
-
-4. ~~**SRS-045 Cost Optimization & FinOps**~~ ✅ CREATED
-   - Tagging strategies, Cost allocation, RI/Spot, Anomaly detection, Budgeting
-
-5. ~~**SRS-046 Multi-Region & Disaster Recovery**~~ ✅ CREATED
-   - RTO/RPO calculations and targets
-   - Cross-region replication strategies
-   - Active-Active vs Active-Passive failover
-   - Data consistency models
-   - Global load balancing
-
-**Priority 2 (Important - for enterprise production):**
-
-6. ~~**SRS-047 Capacity Planning**~~ ✅ CREATED
-   - Load forecasting (ML-based)
-   - Performance baseline establishment
-   - Bottleneck identification
-   - Scalability testing procedures
-
-7. ~~**SRS-048 Security Monitoring**~~ ✅ CREATED
-   - SIEM integration (Elastic, Splunk)
-   - Runtime security (Falco, OSSEC)
-   - Threat detection and response
-   - Compliance monitoring (SOC2, PCI-DSS, GDPR)
-
-**Priority 3 (Useful - for large-scale optimization):**
-
-8. ~~**SRS-049 Platform Engineering**~~ ✅ CREATED
-   - Developer portals (Backstage/Port)
-   - Self-service infrastructure
-   - Golden paths for deployment
-   - Service templates/scaffolding
-
-9. **SRS-050 GitOps**
-   - ArgoCD/Flux detailed examples
-   - Infrastructure as Code best practices
-   - Policy as Code (OPA, Kyverno)
-   - GitOps workflows and security
-
-10. **SRS-051 Advanced Monitoring**
-    - Anomaly detection (ML-based)
-    - Predictive alerting
-    - Capacity forecasting dashboards
-    - AIOps application
-
-#### Industry Standards Comparison
-
-| Standard | Match | Comment |
-|----------|-------|---------|
-| Google SRE Book | 90% | Excellent coverage of SLI/SLO, Error Budgets, monitoring |
-| AWS Well-Architected (Reliability) | 85% | Good reliability, security, operations |
-| CNCF Cloud Native | 95% | Excellent cloud patterns, Service Mesh added |
-| DevOps Handbook | 85% | Good CD, monitoring, IAC |
-| ITIL 4 | 70% | Formal Change Management missing |
-
-#### Recommended Expansion Roadmap
-
-**Phase 1 (Completed):** ✅
-- ~~Create SRS-042 Feature Flags~~ ✅
-- ~~Create SRS-043 Chaos Engineering~~ ✅
-- ~~Create SRS-044 Service Mesh~~ ✅
-
-**Phase 2 (Completed):** ✅
-- ~~Create SRS-045 Cost Optimization & FinOps~~ ✅
-- ~~Create SRS-046 Multi-Region DR~~ ✅
-- ~~Create SRS-047 Capacity Planning~~ ✅
-- ~~Create SRS-048 Security Monitoring~~ ✅
-- Expand SRS-011 (Distributed Tracing) - add Sampling
-- Expand SRS-012 (Circuit Breaker) - add Half-Open, Adaptive
-
-**Phase 3: Platform & Optimization**
-- ~~Create SRS-049 Platform Engineering~~ ✅
-- Create SRS-050 GitOps
-- Create SRS-051 Advanced Monitoring (ML)
-
-**Resources:** ~6 months, 1-2 senior SRE engineers
-
-#### Catalog Quality Metrics
-
-- **Total specifications:** 57 (100%)
-- **Bilingual:** 100% (Russian + English)
-- **Average specification length:** 650+ lines
-- **Production-ready examples:** 95%+
-- **Level 5/5 depth:** 22 specifications (SLI/SLO, Migrations, Backup, On-Call, API Gateway, Feature Flags, Chaos Engineering, Service Mesh, Multi-Region DR, Capacity Planning, Security Monitoring, Database Replication, Database HA, Database Sharding, Database Security, Database Performance Tuning)
-- **Numerical metrics:** 87% contain specific numbers and formulas
-- **Tooling covered:** Prometheus, Grafana, Datadog, PagerDuty, AWS, Kong, NGINX, Vault, Sentry, Jaeger, OpenTelemetry, Istio, Linkerd, Chaos Mesh, Litmus, LaunchDarkly, Unleash, Kubefed, Submariner, k6, Locust, Prophet, Falco, Elastic SIEM, Wazuh, OSSEC, PostgreSQL, MySQL, PgBouncer, Patroni, etcd, HAProxy, pg_stat_statements, pgAudit, Citus, Vitess
-
-#### Maintenance Recommendations
-
-1. **Add CONTRIBUTING.md**
-   - Process for proposing new specifications
-   - Template for new SRS files
-   - Review process
-
-2. **Create Implementation Tracking**
-   - Google Sheets/Notion for implementation tracking
-   - Progress dashboard by teams
-
-3. **Automation**
-   - CI for checking links between specifications
-   - Automatic table of contents generation
-   - Linting for markdown consistency
-
-4. **Community**
-   - Create #sre-specifications Slack channel
-   - Regular review sessions
-   - Collect feedback from teams
-
----
-
-### Conclusion
-
-The **Site Reliability Specifications** catalog is one of the most complete and practical SRE catalogs in the industry. The current level corresponds to **Level 4: Managed** by the SRE maturity model.
-
-**Strengths:**
-- Exceptional depth of key specifications (SLI/SLO, Migrations, Backup)
-- 100% practicality: ready scripts, specific numbers, production-ready examples
-- Bilingual support (Russian + English)
-- Modern tooling and patterns
-
-**To achieve Level 5 (Optimizing):**
-- Add 10-12 specifications (Chaos Engineering, Cost Optimization, Multi-Region, Service Mesh, etc.)
-- Expand existing (Tracing, Circuit Breaker)
-- Implement automated governance
-
-**Recommendation:** Use as an **internal standard** for building reliable systems. This is an excellent foundation for enterprise SRE practices.
-
-**Reading time:** 8-10 hours for full analysis
-**Implementation time:** 3-6 months for the full set
-**ROI:** Pays off with the first incident that is prevented or quickly resolved thanks to runbooks and procedures
-
----
-
-## Industry Standards and Resources
-
-Our specifications are based on the following industry standards and best practices:
-
-| Standard/Resource | Description | Link |
-|-------------------|-------------|------|
-| **Google SRE Book** | The bible of Site Reliability Engineering from Google. Foundation for SLI/SLO, Error Budgets, monitoring | [sre.google/sre-book](https://sre.google/sre-book) |
-| **AWS Well-Architected Framework** | AWS recommendations for building reliable, secure, and efficient systems | [aws.amazon.com/architecture/well-architected](https://aws.amazon.com/architecture/well-architected) |
-| **CNCF Cloud Native** | Cloud Native Patterns and best practices from Cloud Native Computing Foundation | [cncf.io](https://www.cncf.io) |
-| **The DevOps Handbook** | Comprehensive guide to DevOps practices and culture | [itrevolution.com/devops-handbook](https://itrevolution.com/devops-handbook) |
-| **ITIL 4** | IT Service Management framework (ITSM) | [axelos.com/itil](https://www.axelos.com/itil) |
-| **Site Reliability Workbook** | Practical guide to implementing SRE from Google | [sre.google/workbook](https://sre.google/workbook) |
-
-### Additional Resources
-
-- **Prometheus Best Practices** - [prometheus.io/docs](https://prometheus.io/docs)
-- **OpenTelemetry** - Standard for Observability (Tracing, Metrics, Logging) - [opentelemetry.io](https://opentelemetry.io)
-- **Kubernetes Best Practices** - [kubernetes.io/docs/concepts/cluster-administration](https://kubernetes.io/docs/concepts/cluster-administration)
-- **OWASP Top 10** - Security best practices - [owasp.org](https://owasp.org)
-
----
-
-*Last analysis: 10.01.2026 | Analyst: Senior SRE Engineer*
-
----
-
-*Site Reliability Specifications (SRS) - practical guides for building production-ready systems*
+This documentation is provided under MIT License.

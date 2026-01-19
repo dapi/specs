@@ -1,501 +1,166 @@
-# Site Reliability Specifications (SRS)
+# Site Reliability Handbook
 
-🇬🇧 [English version](README.md)
+:gb: [English version](README.md)
 
-Коллекция практических руководств по построению надежных и наблюдаемых приложений.
+Комплексная коллекция спецификаций, паттернов, руководств и операционных практик для построения надежных, масштабируемых и наблюдаемых программных систем.
 
-## Описание
+## Типы документов
 
-Репозиторий содержит практические руководства (спецификации) по построению надежных и наблюдаемых приложений, основанные на лучших практиках Site Reliability Engineering.
+| Префикс | Тип | Описание | Кол-во |
+|---------|-----|----------|--------|
+| **SRS** | Спецификации | Технические требования, которым должно соответствовать ПО | 20 |
+| **SRP** | Паттерны | Архитектурные паттерны и проектные решения | 9 |
+| **SRG** | Руководства | Инструкции по реализации и практические гайды | 19 |
+| **SRO** | Операции | Операционные практики и процессы | 9 |
 
-**Основные категории:**
-
-- **Надежность**: Circuit Breaker, Retry, Graceful Shutdown, Jobs Management, Idempotency, Rate Limiting
-- **Наблюдаемость**: Logging, Error Tracking, Liveness Probes, Versioning
-- **Масштабируемость**: Scaling, Load Shedding, Load Balancing, Deadlines
-- **DevOps практики**: Configuration, Environment Variables, Stand-Independent Images
-
-## Структура репозитория
-
-- `specs/` - директория со всеми спецификациями
-
-## Каталог спецификаций
-
-### Надежность (Reliability)
-
-| Спецификация | Приоритет | Сложность | Роль | Обоснование сложности |
-|--------------|-----------|-----------|------|----------------------|
-| [SRS-001 Jobs Management](specs/SRS-001%20Jobs%20Management.ru.md) | P1 | Medium | Dev | Требует понимания фоновых задач и отработки edge cases |
-| [SRS-010 Liveness Probes](specs/SRS-010%20Liveness%20Probes.ru.md) | P1 | Low | Dev/DevOps | Базовая проверка работоспособности в Kubernetes |
-| [SRS-014 Graceful Shutdown](specs/SRS-014%20Graceful%20Shutdown.ru.md) | P1 | Medium | Dev | Требует обработки сигналов и завершения запросов |
-| [SRS-002 Stateless Services](specs/SRS-002%20Stateless%20Services.ru.md) | P2 | Medium | Architect | Требует архитектурных решений для хранения состояния |
-| [SRS-003 Scaling and State](specs/SRS-003%20Scaling%20and%20State.ru.md) | P2 | High | Architect | Важно для понимания архитектурных ограничений масштабирования |
-| [SRS-015 Blocking Timeouts](specs/SRS-015%20Blocking%20Timeouts.ru.md) | P2 | Low | Dev | Простая конфигурация timeout'ов |
-| [SRS-016 Request Idempotency](specs/SRS-016%20Request%20Idempotency.ru.md) | P2 | Medium | Dev | Требует реализации идемпотентных операций на уровне API |
-| [SRS-017 Deadline Propagation](specs/SRS-017%20Deadline%20Propagation.ru.md) | P2 | Medium | Dev | Требует передачи дедлайнов между сервисами |
-| [SRS-013 Load Shedding](specs/SRS-013%20Load%20Shedding.ru.md) | P2/P3 | Medium | Architect | Продвинутая защита от перегрузки |
-| [SRS-018 Distributed Caching](specs/SRS-018%20Distributed%20Caching.ru.md) | P2 | High | Dev | Требует настройки кэширующего слоя и обеспечения консистентности |
-| [SRS-020 Retryier](specs/SRS-020%20Retryier.ru.md) | P2 | Medium | Dev | Требует реализации экспоненциальных backoff'ов и jitter |
-| [SRS-022 Fallback](specs/SRS-022%20Fallback.ru.md) | P2 | Medium | Dev | Требует реализации graceful degradation |
-| [SRS-023 Load Balancing Patterns](specs/SRS-023%20Load%20Balancing%20Patterns.ru.md) | P2 | Medium | Architect | Требует настройки балансировщика нагрузки |
-| [SRS-024 Auto-scaling](specs/SRS-024%20Auto-scaling.ru.md) | P2 | High | DevOps | Требует настройки правил автоматического масштабирования и мониторинга метрик |
-| [SRS-027 Rate Limiting](specs/SRS-027%20Rate%20Limiting.ru.md) | P2 | Medium | Dev | Требует настройки rate limiter'а и хранилища для счетчиков |
-| [SRS-025 Bulkhead Pattern](specs/SRS-025%20Bulkhead%20Pattern.ru.md) | P3 | High | Dev | Продвинутая изоляция ресурсов, требует архитектурных решений |
-
-### Безопасность (Security)
-
-| Спецификация | Приоритет | Сложность | Роль | Обоснование сложности |
-|--------------|-----------|-----------|------|----------------------|
-| [SRS-029 Secrets Management](specs/SRS-029%20Secrets%20Management.ru.md) | P2 | Medium | Dev/DevOps | Требует интеграции с Vault или облачными Secret Manager |
-| [SRS-031 Audit Logging](specs/SRS-031%20Audit%20Logging.ru.md) | P2 | Medium | Dev | Требует настройки структурированного логирования и хранилища |
-| [SRS-040 Service Authentication](specs/SRS-040%20Service%20Authentication.ru.md) | P2 | Medium | Dev | Требует реализации JWT/OAuth2 и управления секретами |
-| [SRS-041 Authorization Pattern](specs/SRS-041%20Authorization%20Pattern.ru.md) | P2 | Medium | Dev | Требует реализации RBAC или Policy-based access control |
-
-### Наблюдаемость (Observability)
-
-| Спецификация | Приоритет | Сложность | Роль | Обоснование сложности |
-|--------------|-----------|-----------|------|----------------------|
-| [SRS-004 Environment Variables Usage](specs/SRS-004%20Environment%20Variables%20Usage.ru.md) | P1 | Low | Dev/DevOps | Переход на конфигурацию через env vars |
-| [SRS-005 Application Versioning](specs/SRS-005%20Application%20Versioning.ru.md) | P1 | Low | Dev/DevOps | Добавление версии к сборке через CI/CD |
-| [SRS-007 Expose Application Version](specs/SRS-007%20Expose%20Application%20Version.ru.md) | P1 | Low | Dev | Добавление эндпоинта /version |
-| [SRS-008 Logging (Журналирование)](specs/SRS-008%20Logging.ru.md) | P1 | Low | Dev | Простая интеграция с библиотеками логирования |
-| [SRS-009 Error Tracking](specs/SRS-009%20Error%20Tracking.ru.md) | P1 | Low | Dev | Интеграция с Sentry/Rollbar |
-| [SRS-021 Liveness probes over command](specs/SRS-021%20Liveness%20probes%20over%20command.ru.md) | P1 | Low | Dev/DevOps | Настройка liveness probes через command |
-| [SRS-006 Metrics Collection](specs/SRS-006%20Metrics%20Collection.ru.md) | P2 | Low | Dev/SRE | Настройка сбора метрик (Prometheus/Grafana) |
-| [SRS-012 Circuit Breaker](specs/SRS-012%20Circuit%20Breaker.ru.md) | P2 | Medium | Dev | Требует реализации паттерна Circuit Breaker и настройки порогов |
-| [SRS-026 Alerting Rules](specs/SRS-026%20Alerting%20Rules.ru.md) | P2 | Low | SRE | Настройка правил алертинга в Prometheus/Grafana |
-| [SRS-032 SLI/SLO/SLA](specs/SRS-032%20SLI%20SLO%20SLA.ru.md) | P2 | Medium | Architect | Требует определения SLI и расчета SLO |
-| [SRS-019 Stand-Independent Images](specs/SRS-019%20Stand-Independent%20Images.ru.md) | P2 | Medium | DevOps | Подготовка контейнеров без host-зависимостей |
-| [SRS-011 Distributed Tracing](specs/SRS-011%20Distributed%20Tracing.ru.md) | P3 | High | Architect | Требует интеграции с Jaeger/Zipkin и инструментария всех сервисов |
-| [SRS-033 Synthetic Monitoring](specs/SRS-033%20Synthetic%20Monitoring.ru.md) | P3 | Medium | SRE | Настройка синтетических проверок и локаций |
-
-### DevOps & Operations
-
-| Спецификация | Приоритет | Сложность | Роль | Обоснование сложности |
-|--------------|-----------|-----------|------|----------------------|
-| [SRS-036 Backup & Recovery](specs/SRS-036%20Backup%20&%20Recovery.ru.md) | P1 | Medium | DevOps | Требует настройки резервного копирования и восстановления |
-| [SRS-034 On-Call & Incident Response](specs/SRS-034%20On-Call%20&%20Incident%20Response.ru.md) | P2 | Medium | SRE | Требует настройки ротаций, escalation policies и runbook'ов |
-| [SRS-035 Database Migrations](specs/SRS-035%20Database%20Migrations.ru.md) | P2 | High | Dev | Требует настройки фреймворка миграций и тестирования откатов |
-| [SRS-042 Feature Flags](specs/SRS-042%20Feature%20Flags.ru.md) | P2 | Medium | Dev | Управление функциональностью без деплоя, canary releases |
-| [SRS-043 Chaos Engineering](specs/SRS-043%20Chaos%20Engineering.ru.md) | P2 | High | SRE | Требует настройки Chaos Mesh/Litmus и проведения Game Days |
-| [SRS-044 Service Mesh](specs/SRS-044%20Service%20Mesh.ru.md) | P2 | High | Architect | Требует настройки Istio/Linkerd и понимания traffic management |
-| [SRS-045 Cost Optimization & FinOps](specs/SRS-045%20Cost%20Optimization%20&%20FinOps.ru.md) | P2 | Medium | FinOps/SRE | Управление облачными затратами, tagging, budgeting |
-| [SRS-046 Multi-Region DR](specs/SRS-046%20Multi-Region%20DR.ru.md) | P2 | High | Architect | RTO/RPO, cross-region репликация, failover стратегии |
-| [SRS-047 Capacity Planning](specs/SRS-047%20Capacity%20Planning.ru.md) | P2 | Medium | SRE | Прогнозирование нагрузки, анализ узких мест, baseline |
-| [SRS-048 Security Monitoring](specs/SRS-048%20Security%20Monitoring.ru.md) | P1 | High | Security/SRE | SIEM, обнаружение угроз, runtime security, compliance |
-
-### Администрирование баз данных (DBA)
-
-| Спецификация | Приоритет | Сложность | Роль | Обоснование сложности |
-|--------------|-----------|-----------|------|----------------------|
-| [SRS-028 Database Connection Pooling](specs/SRS-028%20Database%20Connection%20Pooling.ru.md) | P2 | Medium | Dev/DBA | Требует настройки пула соединений и понимания нагрузки |
-| [SRS-052 Database Replication](specs/SRS-052%20Database%20Replication.ru.md) | P2 | High | DBA | Требует настройки репликации PostgreSQL/MySQL и мониторинга |
-| [SRS-053 Database Monitoring](specs/SRS-053%20Database%20Monitoring.ru.md) | P1 | Medium | DBA | Требует сбора метрик и настройки алертинга |
-| [SRS-054 Query Optimization](specs/SRS-054%20Query%20Optimization.ru.md) | P2 | Medium | Dev/DBA | Требует знания EXPLAIN ANALYZE и настройки индексов |
-| [SRS-055 Database High Availability](specs/SRS-055%20Database%20High%20Availability.ru.md) | P2 | High | DBA | Требует настройки Patroni/etcd и процедур failover |
-| [SRS-056 Database Sharding](specs/SRS-056%20Database%20Sharding.ru.md) | P3 | High | DBA/Architect | Требует проектирования стратегии шардирования и обработки cross-shard |
-| [SRS-057 Table Partitioning](specs/SRS-057%20Table%20Partitioning.ru.md) | P2 | Medium | DBA | Требует стратегии партиционирования и автоматизации обслуживания |
-| [SRS-058 Read Replicas & Load Balancing](specs/SRS-058%20Read%20Replicas.ru.md) | P2 | Medium | DBA | Требует настройки реплик и lag-aware маршрутизации |
-| [SRS-059 Database Maintenance](specs/SRS-059%20Database%20Maintenance.ru.md) | P2 | Medium | DBA | Требует VACUUM, ANALYZE и управления bloat |
-| [SRS-060 Database Security](specs/SRS-060%20Database%20Security.ru.md) | P1 | High | DBA/Security | Требует настройки аутентификации, шифрования и аудита |
-| [SRS-061 Database Performance Tuning](specs/SRS-061%20Database%20Performance%20Tuning.ru.md) | P2 | High | DBA | Требует знания настройки памяти, WAL и ОС |
-| [SRS-062 Materialized Views & Caching](specs/SRS-062%20Materialized%20Views%20&%20Caching.ru.md) | P2 | Medium | Dev/DBA | Требует управления материализованными представлениями и инвалидации кэша |
-
-### Статус реализации
-
-- **Всего спецификаций в репозитории**: 57
-- **Покрытие**: 100%
-
-### Резюме для разработчика
-
-**Обязательно изучить:**
-- Паттерны надёжности: [Circuit Breaker](specs/SRS-012%20Circuit%20Breaker.ru.md), [Retry](specs/SRS-020%20Retryier.ru.md), [Fallback](specs/SRS-022%20Fallback.ru.md), [Bulkhead](specs/SRS-025%20Bulkhead%20Pattern.ru.md), [Timeouts](specs/SRS-015%20Blocking%20Timeouts.ru.md)
-- Работа с данными: [Idempotency](specs/SRS-016%20Request%20Idempotency.ru.md), [Caching](specs/SRS-018%20Distributed%20Caching.ru.md), [Connection Pooling](specs/SRS-028%20Database%20Connection%20Pooling.ru.md), [Migrations](specs/SRS-035%20Database%20Migrations.ru.md)
-- Observability: [Logging](specs/SRS-008%20Logging.ru.md), [Error Tracking](specs/SRS-009%20Error%20Tracking.ru.md), [Audit Logging](specs/SRS-031%20Audit%20Logging.ru.md)
-- Безопасность: [Authentication](specs/SRS-040%20Service%20Authentication.ru.md), [Authorization](specs/SRS-041%20Authorization%20Pattern.ru.md)
-- Жизненный цикл: [Graceful Shutdown](specs/SRS-014%20Graceful%20Shutdown.ru.md), [Deadline Propagation](specs/SRS-017%20Deadline%20Propagation.ru.md)
-
-**Знать поверхностно:**
-- [Jobs](specs/SRS-001%20Jobs%20Management.ru.md), [Probes](specs/SRS-010%20Liveness%20Probes.ru.md), [Metrics](specs/SRS-006%20Metrics%20Collection.ru.md), [Secrets](specs/SRS-029%20Secrets%20Management.ru.md), [Versioning](specs/SRS-005%20Application%20Versioning.ru.md), [Environment Variables](specs/SRS-004%20Environment%20Variables%20Usage.ru.md)
-
-### Резюме для архитектора
-
-**Обязательно изучить:**
-- Архитектура состояния: [Stateless Services](specs/SRS-002%20Stateless%20Services.ru.md), [Scaling and State](specs/SRS-003%20Scaling%20and%20State.ru.md)
-- Защита системы: [Load Shedding](specs/SRS-013%20Load%20Shedding.ru.md), [Load Balancing](specs/SRS-023%20Load%20Balancing%20Patterns.ru.md), [API Gateway](specs/SRS-038%20API%20Gateway.ru.md)
-- Observability: [Distributed Tracing](specs/SRS-011%20Distributed%20Tracing.ru.md), [SLI/SLO/SLA](specs/SRS-032%20SLI%20SLO%20SLA.ru.md)
-
-**Знать поверхностно:**
-- Все спецификации для разработчика (для code review и технического руководства)
-- [Auto-scaling](specs/SRS-024%20Auto-scaling.ru.md), [Backups](specs/SRS-036%20Backup%20&%20Recovery.ru.md)
-
-### Резюме для SRE/DevOps
-
-**Обязательно изучить:**
-- Инфраструктура: [Auto-scaling](specs/SRS-024%20Auto-scaling.ru.md), [Stand-Independent Images](specs/SRS-019%20Stand-Independent%20Images.ru.md), [Backups](specs/SRS-036%20Backup%20&%20Recovery.ru.md)
-- Мониторинг: [Alerting Rules](specs/SRS-026%20Alerting%20Rules.ru.md), [Synthetic Monitoring](specs/SRS-033%20Synthetic%20Monitoring.ru.md), [Metrics](specs/SRS-006%20Metrics%20Collection.ru.md)
-- Процессы: [On-Call & Incident Response](specs/SRS-034%20On-Call%20&%20Incident%20Response.ru.md), [SLI/SLO/SLA](specs/SRS-032%20SLI%20SLO%20SLA.ru.md)
-- Безопасность: [Secrets Management](specs/SRS-029%20Secrets%20Management.ru.md)
-
-**Знать поверхностно:**
-- [Probes](specs/SRS-010%20Liveness%20Probes.ru.md), [Environment Variables](specs/SRS-004%20Environment%20Variables%20Usage.ru.md), [Versioning](specs/SRS-005%20Application%20Versioning.ru.md)
-- Паттерны надёжности (для понимания поведения приложений): [Circuit Breaker](specs/SRS-012%20Circuit%20Breaker.ru.md), [Retry](specs/SRS-020%20Retryier.ru.md), [Graceful Shutdown](specs/SRS-014%20Graceful%20Shutdown.ru.md)
-
-### Резюме для DBA
-
-**Обязательно изучить:**
-- Core база данных: [Connection Pooling](specs/SRS-028%20Database%20Connection%20Pooling.ru.md), [Репликация](specs/SRS-052%20Database%20Replication.ru.md), [High Availability](specs/SRS-055%20Database%20High%20Availability.ru.md)
-- Производительность: [Оптимизация запросов](specs/SRS-054%20Query%20Optimization.ru.md), [Настройка производительности](specs/SRS-061%20Database%20Performance%20Tuning.ru.md), [Материализованные представления](specs/SRS-062%20Materialized%20Views%20&%20Caching.ru.md)
-- Операции: [Мониторинг](specs/SRS-053%20Database%20Monitoring.ru.md), [Обслуживание](specs/SRS-059%20Database%20Maintenance.ru.md), [Миграции](specs/SRS-035%20Database%20Migrations.ru.md)
-- Безопасность: [Безопасность БД](specs/SRS-060%20Database%20Security.ru.md)
-
-**Знать поверхностно:**
-- Продвинутые паттерны: [Шардирование](specs/SRS-056%20Database%20Sharding.ru.md), [Партиционирование](specs/SRS-057%20Table%20Partitioning.ru.md), [Read Replicas](specs/SRS-058%20Read%20Replicas.ru.md)
-- Связанные спеки: [Backup & Recovery](specs/SRS-036%20Backup%20&%20Recovery.ru.md), [Distributed Caching](specs/SRS-018%20Distributed%20Caching.ru.md)
-
-## Как использовать
-
-Каждая спецификация имеет нумерацию вида `SRS-XXX`, где XXX - порядковый номер. Каждая спецификация содержит конкретные рекомендации и best practices, которые можно внедрять в ваши сервисы независимо.
-
-Статус спецификаций:
-- `DRAFT` - находится в разработке
-- `PROPOSED` - предложена к применению
-- `APPROVED` - одобрена и рекомендуется к использованию
-- `DEPRECATED` - не рекомендуется к применению
+**Всего: 57 документов**
 
 ---
 
-## Практические рекомендации по внедрению
+## SRS - Спецификации (20)
 
-### Фаза 1: Week 1-2 (MVP Launch)
+Технические требования, определяющие, что должны реализовывать программные системы.
 
-**Цель:** Запустить базовый production-ready сервис
-
-```bash
-# Порядок внедрения в первую неделю:
-1. SRS-004 (Environment Variables) - Настройка конфигурации
-2. SRS-005/007 (Versioning) - Версионирование приложения
-3. SRS-008 (Logging) - Базовое логирование
-4. SRS-010/021 (Health Checks) - Проверки работоспособности
-5. SRS-014 (Graceful Shutdown) - Корректная остановка
-6. SRS-009 (Error Tracking) - Отслеживание ошибок
-
-# Порядок внедрения во вторую неделю:
-7. SRS-001 (Jobs Management) - Фоновые задачи
-8. SRS-036 (Backups) - Базовые резервные копии
-9. SRS-006 (Metrics) - Базовые метрики
-10. SRS-026 (Alerting) - Базовые алерты
-```
-
-### Фаза 2: Week 3-8 (Production Hardening)
-
-**Цель:** Сделать сервис надежным и безопасным
-
-```bash
-# Недели 3-4: Безопасность и доступ
-1. SRS-040/041 (Auth) - Базовая аутентификация
-2. SRS-029 (Secrets) - Управление секретами
-3. SRS-027 (Rate Limiting) - Защита от перегрузки
-
-# Недели 5-6: Надежность
-4. SRS-012 (Circuit Breaker) - Защита от каскадных сбоев
-5. SRS-020 (Retry) - Автоматическое восстановление
-6. SRS-015 (Timeouts) - Предотвращение зависаний
-7. SRS-022 (Fallback) - Graceful degradation
-
-# Недели 7-8: Мониторинг и операции
-8. SRS-032 (SLI/SLO/SLA) - Определение надежности
-9. SRS-003/002 (State) - Проектирование масштабируемости
-10. SRS-035 (Migrations) - Если нужны изменения схемы
-```
-
-### Фаза 3: Month 3+ (Optimization)
-
-**Цель:** Оптимизировать производительность и операционную эффективность
-
-```bash
-# Потоковая оптимизация по мере необходимости
-- SRS-018 (Caching) - Когда появляются проблемы с производительностью
-- SRS-024 (Auto-scaling) - Когда нагрузка становится переменной
-- SRS-028 (Connection Pooling) - Когда БД становится bottleneck
-- SRS-033 (Synthetic Monitoring) - Проактивное обнаружение
-- SRS-011 (Tracing) - При сложности системы >3 сервисов
-```
+| ID | Название | Приоритет | Роли |
+|----|----------|-----------|------|
+| [SRS-001](specs/SRS-001%20Stateless%20Services.ru.md) | Stateless Services | P1 | Developer, Architect |
+| [SRS-002](specs/SRS-002%20Environment%20Variables.ru.md) | Environment Variables | P1 | Developer, DevOps |
+| [SRS-003](specs/SRS-003%20Application%20Versioning.ru.md) | Application Versioning | P2 | Developer, DevOps |
+| [SRS-004](specs/SRS-004%20Expose%20Application%20Version.ru.md) | Expose Application Version | P2 | Developer |
+| [SRS-005](specs/SRS-005%20Liveness%20Probes.ru.md) | Liveness Probes | P1 | Developer, SRE |
+| [SRS-006](specs/SRS-006%20Liveness%20Probes%20Command.ru.md) | Liveness Probes Command | P2 | Developer, SRE |
+| [SRS-007](specs/SRS-007%20Circuit%20Breaker.ru.md) | Circuit Breaker | P1 | Developer, Architect |
+| [SRS-008](specs/SRS-008%20Graceful%20Shutdown.ru.md) | Graceful Shutdown | P1 | Developer |
+| [SRS-009](specs/SRS-009%20Blocking%20Timeouts.ru.md) | Blocking Timeouts | P1 | Developer |
+| [SRS-010](specs/SRS-010%20Request%20Idempotency.ru.md) | Request Idempotency | P1 | Developer, Architect |
+| [SRS-011](specs/SRS-011%20Deadline%20Propagation.ru.md) | Deadline Propagation | P2 | Developer, Architect |
+| [SRS-012](specs/SRS-012%20Stand-Independent%20Images.ru.md) | Stand-Independent Images | P1 | Developer, DevOps |
+| [SRS-013](specs/SRS-013%20Retry%20Pattern.ru.md) | Retry Pattern | P1 | Developer |
+| [SRS-014](specs/SRS-014%20Fallback.ru.md) | Fallback | P2 | Developer, Architect |
+| [SRS-015](specs/SRS-015%20Bulkhead%20Pattern.ru.md) | Bulkhead Pattern | P2 | Developer, Architect |
+| [SRS-016](specs/SRS-016%20Rate%20Limiting.ru.md) | Rate Limiting | P1 | Developer, Architect |
+| [SRS-017](specs/SRS-017%20Database%20Connection%20Pooling.ru.md) | Database Connection Pooling | P1 | Developer, DBA |
+| [SRS-018](specs/SRS-018%20Secrets%20Management.ru.md) | Secrets Management | P1 | Developer, DevOps, Security |
+| [SRS-019](specs/SRS-019%20Service%20Authentication.ru.md) | Service Authentication | P1 | Developer, Security |
+| [SRS-020](specs/SRS-020%20Authorization%20Pattern.ru.md) | Authorization Pattern | P1 | Developer, Security |
 
 ---
 
-## Уровни зрелости продуктов
+## SRP - Паттерны (9)
 
-### Level 1: MVP (Minimum Viable Product)
-**Требуется:** Приоритет 1 (10 спецификаций)
-- Базовая инфраструктура и мониторинг
-- Корректная остановка и версионирование
-- Резервные копии критичных данных
+Архитектурные паттерны и проверенные проектные решения для типичных задач.
 
-### Level 2: Production-Ready
-**Требуется:** Приоритет 1 + Приоритет 2 (33 спецификации)
-- Все приоритет 1
-- Безопасность и контроль доступа
-- Надежность и отказоустойчивость
-- Метрики и мониторинг
-- Операционные процедуры
-
-### Level 3: Enterprise-Ready
-**Требуется:** Приоритет 1 + Приоритет 2 + Приоритет 3 (39 спецификаций)
-- Все спецификации
-- Продвинутая оптимизация
-- Проактивное мониторинг
-- Продвинутая аналитика
-- Полное покрытие всех аспектов
+| ID | Название | Приоритет | Роли |
+|----|----------|-----------|------|
+| [SRP-001](specs/SRP-001%20Jobs%20Management.ru.md) | Jobs Management | P2 | Developer, Architect |
+| [SRP-002](specs/SRP-002%20Scaling%20and%20State.ru.md) | Scaling and State | P1 | Architect, SRE |
+| [SRP-003](specs/SRP-003%20Load%20Shedding.ru.md) | Load Shedding | P2 | Developer, Architect |
+| [SRP-004](specs/SRP-004%20Distributed%20Caching.ru.md) | Distributed Caching | P2 | Developer, Architect |
+| [SRP-005](specs/SRP-005%20Load%20Balancing.ru.md) | Load Balancing | P1 | Architect, SRE |
+| [SRP-006](specs/SRP-006%20Auto-scaling.ru.md) | Auto-scaling | P2 | SRE, DevOps |
+| [SRP-007](specs/SRP-007%20API%20Gateway.ru.md) | API Gateway | P2 | Architect, Developer |
+| [SRP-008](specs/SRP-008%20Service%20Mesh.ru.md) | Service Mesh | P3 | Architect, SRE |
+| [SRP-009](specs/SRP-009%20Materialized%20Views.ru.md) | Materialized Views & Caching | P2 | Developer, DBA |
 
 ---
 
-## Примеры команд внедрения
+## SRG - Руководства (19)
 
-### Стартап (2 инженера, 3 месяца)
-- **Недели 1-3:** Приоритет 1 (Core infrastructure)
-- **Недели 4-10:** Приоритет 2 (Security, reliability)
-- **Недели 11-12:** Приоритет 3 (Оптимизация самых болезненных мест)
+Руководства по реализации и практическая документация по конкретным темам.
 
-### Small Team (5 инженеров, 2 месяца)
-- **Недели 1-2:** Приоритет 1 (Параллельно)
-- **Недели 3-8:** Приоритет 2 (Распределенно по сервисам)
-- **Недель 9-10:** Приоритет 3 (По необходимости)
-
-### Enterprise Team (20+ инженеров)
-- **Недели 1-2:** Приоритет 1 (Все команды параллельно)
-- **Недели 3-6:** Приоритет 2 (Распределенно по доменам)
-- **Недели 7+:** Приоритет 3 (Постоянный процесс оптимизации)
-
----
-
-## Сводная карта приоритетов
-
-```
-Priority 1 (Critical - 12 specs)
-├─ Logging, Error Tracking, Health Checks
-├─ Versioning, Environment Variables
-├─ Graceful Shutdown, Jobs Management
-├─ Basic Backups, Basic Metrics
-└─ Database Monitoring, Database Security
-
-Priority 2 (Important - 38 specs)
-├── Security (5)
-├── Reliability (8)
-├── Data & State (5)
-├── Infrastructure (4)
-└── Database Administration (10)
-
-Priority 3 (Nice to have - 7 specs)
-├── Performance (3)
-├── Analytics (2)
-├── Platform Engineering (1)
-└── Database Sharding (1)
-
-Total: 57 specifications
-```
+| ID | Название | Приоритет | Роли |
+|----|----------|-----------|------|
+| [SRG-001](specs/SRG-001%20Metrics%20Collection.ru.md) | Metrics Collection | P1 | Developer, SRE |
+| [SRG-002](specs/SRG-002%20Logging.ru.md) | Logging | P1 | Developer, SRE |
+| [SRG-003](specs/SRG-003%20Error%20Tracking.ru.md) | Error Tracking | P1 | Developer, SRE |
+| [SRG-004](specs/SRG-004%20Distributed%20Tracing.ru.md) | Distributed Tracing | P1 | Developer, SRE |
+| [SRG-005](specs/SRG-005%20Alerting%20Rules.ru.md) | Alerting Rules | P1 | SRE, DevOps |
+| [SRG-006](specs/SRG-006%20Audit%20Logging.ru.md) | Audit Logging | P2 | Developer, Security |
+| [SRG-007](specs/SRG-007%20SLI%20SLO%20SLA.ru.md) | SLI, SLO, SLA | P1 | SRE, Product |
+| [SRG-008](specs/SRG-008%20Synthetic%20Monitoring.ru.md) | Synthetic Monitoring | P2 | SRE |
+| [SRG-009](specs/SRG-009%20Database%20Migrations.ru.md) | Database Migrations | P1 | Developer, DBA |
+| [SRG-010](specs/SRG-010%20Backup%20Recovery.ru.md) | Backup & Recovery | P1 | DBA, SRE |
+| [SRG-011](specs/SRG-011%20Feature%20Flags.ru.md) | Feature Flags | P2 | Developer, Product |
+| [SRG-012](specs/SRG-012%20Security%20Monitoring.ru.md) | Security Monitoring | P1 | Security, SRE |
+| [SRG-013](specs/SRG-013%20Database%20Replication.ru.md) | Database Replication | P1 | DBA |
+| [SRG-014](specs/SRG-014%20Database%20Monitoring.ru.md) | Database Monitoring | P1 | DBA, SRE |
+| [SRG-015](specs/SRG-015%20Query%20Optimization.ru.md) | Query Optimization | P2 | Developer, DBA |
+| [SRG-016](specs/SRG-016%20Database%20Sharding.ru.md) | Database Sharding | P3 | DBA, Architect |
+| [SRG-017](specs/SRG-017%20Table%20Partitioning.ru.md) | Table Partitioning | P2 | DBA |
+| [SRG-018](specs/SRG-018%20Read%20Replicas.ru.md) | Read Replicas | P2 | DBA, Architect |
+| [SRG-019](specs/SRG-019%20Database%20Performance%20Tuning.ru.md) | Database Performance Tuning | P2 | DBA |
 
 ---
 
-## Области улучшения и Рекомендации
+## SRO - Операции (9)
 
-### Анализ зрелости каталога (от Senior SRE Engineer)
+Операционные практики, процессы и процедуры для эксплуатации надежных систем.
 
-**Общая оценка: 8.5/10** - Каталог демонстрирует высокий уровень зрелости и практичности, близкий к industry-leading стандартам.
-
-#### ✅ Сильные стороны
-
-1. **Полное покрытие core SRE практик (85%)**
-   - 39 спецификаций охватывают надежность, наблюдаемость, безопасность, операции
-   - Production-ready примеры с конкретными числами и формулами
-
-2. **Исключительная глубина ключевых спецификаций**
-   - **SRS-032 SLI/SLO/SLA** (713 строк): Error Budget formulas, Burn Rate Alerts, индустриальные сравнения
-   - **SRS-035 Database Migrations** (698 строк): Expand/Contract pattern, 6 фреймворков, zero-downtime
-   - **SRS-036 Backup & Recovery** (849 строк): 3-2-1 rule, cost optimization, RTO/RPO
-   - **SRS-034 On-Call & Incident Response** (697 строк): Sev1-4 классификация, runbooks, postmortems
-   - **SRS-038 API Gateway** (680 строк): Multi-layer architecture, BFF pattern, platform comparison
-
-3. **Практичность: готовые к использованию скрипты**
-   - Backup verification: `pg_restore --list backup.dump | head -10`
-   - Pre-shift checklist: laptop, VPN, monitoring access
-   - Safe migrations: `backup → migrate → smoke tests → rollback if failed`
-
-4. **Конкретные числа и SLAs**
-   - Sev1: <5 min response, 4h resolution
-   - Rate limiting: 1000 req/min, burst=20
-   - Error Budget: 0.1% для 99.9% SLO = 43m 49s/month
-
-#### ⚠️ Пробелы и рекомендации по расширению
-
-**Приоритет 1 (Критично - для level 5 Optimizing):**
-
-1. ~~**SRS-042 Feature Flags & Toggles**~~ ✅ СОЗДАНО
-   - Rollback без деплоя, A/B testing, Canary releases, Gradual rollout
-
-2. ~~**SRS-043 Chaos Engineering**~~ ✅ СОЗДАНО
-   - Fault injection, Chaos Mesh/Litmus, Game Days, Automated experiments
-
-3. ~~**SRS-044 Service Mesh**~~ ✅ СОЗДАНО
-   - Istio/Linkerd, mTLS, Traffic management, Observability
-
-4. ~~**SRS-045 Cost Optimization & FinOps**~~ ✅ СОЗДАНО
-   - Tagging strategies, Cost allocation, RI/Spot, Anomaly detection, Budgeting
-
-5. ~~**SRS-046 Multi-Region & Disaster Recovery**~~ ✅ СОЗДАНО
-   - RTO/RPO расчеты и цели
-   - Cross-region replication стратегии
-   - Active-Active vs Active-Passive failover
-   - Data consistency модели
-   - Global load balancing
-
-**Приоритет 2 (Важно - для enterprise production):**
-
-6. ~~**SRS-047 Capacity Planning**~~ ✅ СОЗДАНО
-   - Load forecasting (ML-based)
-   - Performance baseline establishment
-   - Bottleneck identification
-   - Scalability testing procedures
-
-7. ~~**SRS-048 Security Monitoring**~~ ✅ СОЗДАНО
-   - SIEM интеграция (Elastic, Splunk)
-   - Runtime security (Falco, OSSEC)
-   - Threat detection и response
-   - Compliance monitoring (SOC2, PCI-DSS, GDPR)
-
-**Приоритет 3 (Полезно - для large-scale optimization):**
-
-8. ~~**SRS-049 Platform Engineering**~~ ✅ СОЗДАНО
-   - Developer portals (Backstage/Port)
-   - Self-service infrastructure
-   - Golden paths для деплоя
-   - Service templates/scaffolding
-
-9. **SRS-050 GitOps**
-   - ArgoCD/Flux детальные примеры
-   - Infrastructure as Code best practices
-   - Policy as Code (OPA, Kyverno)
-   - GitOps workflows и безопасность
-
-10. **SRS-051 Advanced Monitoring**
-    - Anomaly detection (ML-based)
-    - Predictive alerting
-    - Capacity forecasting dashboards
-    - AIOps применение
-
-#### 📊 Сравнение с индустриальными стандартами
-
-| Стандарт | Совпадение | Комментарий |
-|----------|------------|-------------|
-| Google SRE Book | 90% | Отличное покрытие SLI/SLO, Error Budgets, мониторинг |
-| AWS Well-Architected (Reliability) | 85% | Хорошая надежность, безопасность, операции |
-| CNCF Cloud Native | 95% | Отличные cloud patterns, Service Mesh добавлен |
-| DevOps Handbook | 85% | Хороший CD, мониторинг, IAC |
-| ITIL 4 | 70% | Formal Change Management отсутствует |
-
-#### 🎯 Рекомендованный roadmap расширения
-
-**Phase 1 (Завершено):** ✅
-- ~~Создать SRS-042 Feature Flags~~ ✅
-- ~~Создать SRS-043 Chaos Engineering~~ ✅
-- ~~Создать SRS-044 Service Mesh~~ ✅
-
-**Phase 2 (Завершено):** ✅
-- ~~Создать SRS-045 Cost Optimization & FinOps~~ ✅
-- ~~Создать SRS-046 Multi-Region DR~~ ✅
-- ~~Создать SRS-047 Capacity Planning~~ ✅
-- ~~Создать SRS-048 Security Monitoring~~ ✅
-- Расширить SRS-011 (Distributed Tracing) - добавить Sampling
-- Расширить SRS-012 (Circuit Breaker) - добавить Half-Open, Adaptive
-
-**Phase 3: Platform & Optimization**
-- ~~Создать SRS-049 Platform Engineering~~ ✅
-- Создать SRS-050 GitOps
-- Создать SRS-051 Advanced Monitoring (ML)
-
-**Ресурсы:** ~6 месяцев, 1-2 senior SRE engineers
-
-#### 📈 Метрики качества каталога
-
-- **Всего спецификаций:** 57 (100%)
-- **Двуязычность:** 100% (русский + английский)
-- **Средняя длина спецификации:** 650+ строк
-- **Production-ready примеры:** 95%+
-- **Глубина уровня 5/5:** 22 спецификации (SLI/SLO, Migrations, Backup, On-Call, API Gateway, Feature Flags, Chaos Engineering, Service Mesh, Multi-Region DR, Capacity Planning, Security Monitoring, Database Replication, Database HA, Database Sharding, Database Security, Database Performance Tuning)
-- **Числовые метрики:** 87% содержат конкретные числа и формулы
-- **Инструментарий охвачен:** Prometheus, Grafana, Datadog, PagerDuty, AWS, Kong, NGINX, Vault, Sentry, Jaeger, OpenTelemetry, Istio, Linkerd, Chaos Mesh, Litmus, LaunchDarkly, Unleash, Kubefed, Submariner, k6, Locust, Prophet, Falco, Elastic SIEM, Wazuh, OSSEC, PostgreSQL, MySQL, PgBouncer, Patroni, etcd, HAProxy, pg_stat_statements, pgAudit, Citus, Vitess
-
-#### 📝 Рекомендации по поддержке
-
-1. **Добавить CONTRIBUTING.md**
-   - Процесс предложения новых спецификаций
-   - Шаблон для новых SRS файлов
-   - Review process
-
-2. **Создать Implementation Tracking**
-   - Google Sheets/Notion для отслеживания внедрения
-   - Dashboard прогресса по командам
-
-3. **Automation**
-   - CI для проверки ссылок между спецификациями
-   - Автоматическая генерация оглавления
-   - Linting для markdown consistency
-
-4. **Community**
-   - Создать #sre-specifications Slack канал
-   - Регулярные review sessions
-   - Собирать feedback от команд
+| ID | Название | Приоритет | Роли |
+|----|----------|-----------|------|
+| [SRO-001](specs/SRO-001%20On-Call%20Incident%20Response.ru.md) | On-Call & Incident Response | P1 | SRE, DevOps |
+| [SRO-002](specs/SRO-002%20Chaos%20Engineering.ru.md) | Chaos Engineering | P2 | SRE |
+| [SRO-003](specs/SRO-003%20Cost%20Optimization%20FinOps.ru.md) | Cost Optimization & FinOps | P2 | SRE, Finance |
+| [SRO-004](specs/SRO-004%20Multi-Region%20DR.ru.md) | Multi-Region DR | P1 | Architect, SRE |
+| [SRO-005](specs/SRO-005%20Capacity%20Planning.ru.md) | Capacity Planning | P2 | SRE, Architect |
+| [SRO-006](specs/SRO-006%20Platform%20Engineering.ru.md) | Platform Engineering | P2 | SRE, Architect |
+| [SRO-007](specs/SRO-007%20Database%20High%20Availability.ru.md) | Database High Availability | P1 | DBA, SRE |
+| [SRO-008](specs/SRO-008%20Database%20Maintenance.ru.md) | Database Maintenance | P1 | DBA |
+| [SRO-009](specs/SRO-009%20Database%20Security.ru.md) | Database Security | P1 | DBA, Security |
 
 ---
 
-### Заключение
+## Уровни приоритета
 
-Каталог **Site Reliability Specifications** - это один из самых полных и практичных SRE-каталогов в индустрии. Текущий уровень соответствует **Level 4: Managed** по модели зрелости SRE.
+| Приоритет | Описание | Документов |
+|-----------|----------|------------|
+| **P1** | Критично - Обязательно реализовать | 32 |
+| **P2** | Важно - Следует реализовать | 22 |
+| **P3** | Желательно | 3 |
 
-**Сильные стороны:**
-- Исключительная глубина ключевых спецификаций (SLI/SLO, Migrations, Backup)
-- 100% практичность: готовые скрипты, конкретные числа, production-ready примеры
-- Двуязычная поддержка (русский + английский)
-- Современный инструментарий и паттерны
+---
 
-**Для достижения Level 5 (Optimizing):**
-- Добавить 10-12 спецификаций (Chaos Engineering, Cost Optimization, Multi-Region, Service Mesh, и т.д.)
-- Расширить существующие (Tracing, Circuit Breaker)
-- Внедрить automated governance
+## Сводки по ролям
 
-**Рекомендация:** Использовать как **внутренний стандарт** для построения reliable систем. Это excellent foundation для enterprise SRE practices.
+### Сводка для разработчика
+Основные спецификации для разработчиков приложений:
+- **Надежность**: [SRS-001](specs/SRS-001%20Stateless%20Services.ru.md), [SRS-007](specs/SRS-007%20Circuit%20Breaker.ru.md), [SRS-008](specs/SRS-008%20Graceful%20Shutdown.ru.md), [SRS-009](specs/SRS-009%20Blocking%20Timeouts.ru.md), [SRS-013](specs/SRS-013%20Retry%20Pattern.ru.md)
+- **Наблюдаемость**: [SRG-001](specs/SRG-001%20Metrics%20Collection.ru.md), [SRG-002](specs/SRG-002%20Logging.ru.md), [SRG-003](specs/SRG-003%20Error%20Tracking.ru.md), [SRG-004](specs/SRG-004%20Distributed%20Tracing.ru.md)
+- **Конфигурация**: [SRS-002](specs/SRS-002%20Environment%20Variables.ru.md), [SRS-003](specs/SRS-003%20Application%20Versioning.ru.md)
+- **Безопасность**: [SRS-018](specs/SRS-018%20Secrets%20Management.ru.md), [SRS-019](specs/SRS-019%20Service%20Authentication.ru.md), [SRS-020](specs/SRS-020%20Authorization%20Pattern.ru.md)
 
-**Время чтения:** 8-10 часов для полного анализа
-**Время внедрения:** 3-6 месяцев для полного набора
-**ROI:** Окупается в первый же инцидент, который предотвращен или быстро решен благодаря runbook'ам и процедурам
+### Сводка для архитектора
+Ключевые паттерны для системных архитекторов:
+- **Отказоустойчивость**: [SRS-007](specs/SRS-007%20Circuit%20Breaker.ru.md), [SRS-015](specs/SRS-015%20Bulkhead%20Pattern.ru.md), [SRS-014](specs/SRS-014%20Fallback.ru.md), [SRP-003](specs/SRP-003%20Load%20Shedding.ru.md)
+- **Масштабируемость**: [SRP-002](specs/SRP-002%20Scaling%20and%20State.ru.md), [SRP-005](specs/SRP-005%20Load%20Balancing.ru.md), [SRP-006](specs/SRP-006%20Auto-scaling.ru.md)
+- **Интеграция**: [SRP-007](specs/SRP-007%20API%20Gateway.ru.md), [SRP-008](specs/SRP-008%20Service%20Mesh.ru.md)
+
+### Сводка для SRE
+Документация по операционной деятельности:
+- **Мониторинг**: [SRG-001](specs/SRG-001%20Metrics%20Collection.ru.md), [SRG-005](specs/SRG-005%20Alerting%20Rules.ru.md), [SRG-007](specs/SRG-007%20SLI%20SLO%20SLA.ru.md), [SRG-008](specs/SRG-008%20Synthetic%20Monitoring.ru.md)
+- **Управление инцидентами**: [SRO-001](specs/SRO-001%20On-Call%20Incident%20Response.ru.md), [SRO-002](specs/SRO-002%20Chaos%20Engineering.ru.md)
+- **Надежность**: [SRO-004](specs/SRO-004%20Multi-Region%20DR.ru.md), [SRO-005](specs/SRO-005%20Capacity%20Planning.ru.md)
+
+### Сводка для DBA
+Ресурсы по администрированию баз данных:
+- **Производительность**: [SRG-015](specs/SRG-015%20Query%20Optimization.ru.md), [SRG-019](specs/SRG-019%20Database%20Performance%20Tuning.ru.md), [SRP-009](specs/SRP-009%20Materialized%20Views.ru.md)
+- **Доступность**: [SRG-013](specs/SRG-013%20Database%20Replication.ru.md), [SRO-007](specs/SRO-007%20Database%20High%20Availability.ru.md), [SRG-018](specs/SRG-018%20Read%20Replicas.ru.md)
+- **Операции**: [SRG-009](specs/SRG-009%20Database%20Migrations.ru.md), [SRG-010](specs/SRG-010%20Backup%20Recovery.ru.md), [SRO-008](specs/SRO-008%20Database%20Maintenance.ru.md)
+- **Безопасность**: [SRO-009](specs/SRO-009%20Database%20Security.ru.md)
+- **Масштабирование**: [SRG-016](specs/SRG-016%20Database%20Sharding.ru.md), [SRG-017](specs/SRG-017%20Table%20Partitioning.ru.md)
 
 ---
 
 ## Отраслевые стандарты и ресурсы
 
-Наши спецификации основаны на следующих отраслевых стандартах и best practices:
-
-| Стандарт/Ресурс | Описание | Ссылка |
-|----------------|----------|--------|
-| **Google SRE Book** | Библия Site Reliability Engineering от Google. Основа для SLI/SLO, Error Budgets, мониторинга | [sre.google/sre-book](https://sre.google/sre-book) |
-| **AWS Well-Architected Framework** | Рекомендации AWS по построению надежных, безопасных и эффективных систем | [aws.amazon.com/architecture/well-architected](https://aws.amazon.com/architecture/well-architected) |
-| **CNCF Cloud Native** | Cloud Native Patterns и best practices от Cloud Native Computing Foundation | [cncf.io](https://www.cncf.io) |
-| **The DevOps Handbook** | Комплексный гайд по DevOps практикам и культуре | [itrevolution.com/devops-handbook](https://itrevolution.com/devops-handbook) |
-| **ITIL 4** | IT Service Management framework (ITSM) | [axelos.com/itil](https://www.axelos.com/itil) |
-| **Site Reliability Workbook** | Практическое руководство по внедрению SRE от Google | [sre.google/workbook](https://sre.google/workbook) |
-
-### Дополнительные ресурсы
-
-- **Prometheus Best Practices** - [prometheus.io/docs](https://prometheus.io/docs)
-- **OpenTelemetry** - Стандарт для Observability (Tracing, Metrics, Logging) - [opentelemetry.io](https://opentelemetry.io)
-- **Kubernetes Best Practices** - [kubernetes.io/docs/concepts/cluster-administration](https://kubernetes.io/docs/concepts/cluster-administration)
-- **OWASP Top 10** - Security best practices - [owasp.org](https://owasp.org)
+- [Google SRE Books](https://sre.google/books/)
+- [The Twelve-Factor App](https://12factor.net/)
+- [Cloud Native Computing Foundation](https://www.cncf.io/)
+- [OpenTelemetry](https://opentelemetry.io/)
+- [Prometheus](https://prometheus.io/)
 
 ---
 
-*Последний анализ: 10.01.2026 | Аналитик: Senior SRE Engineer*
+## Лицензия
 
----
-
-*Site Reliability Specifications (SRS) - практические руководства для построения production-ready систем*
-
+Документация предоставляется под лицензией MIT.
