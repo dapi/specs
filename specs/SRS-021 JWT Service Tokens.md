@@ -1,8 +1,5 @@
 # SRS-021 JWT Service Tokens
 
-**Status**: APPROVED
-**Related**: [SRS-019 Service Authentication](SRS-019%20Service%20Authentication.md), [SRS-018 Secrets Management](SRS-018%20Secrets%20Management.md)
-
 ## Definition
 
 JWT (JSON Web Token) Service Tokens are signed tokens used to authenticate service-to-service requests. The token is issued by the calling service, signed with a private key, and verified by the receiving service using the corresponding public key — without requiring a call to an external auth service.

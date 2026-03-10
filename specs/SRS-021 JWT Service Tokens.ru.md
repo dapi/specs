@@ -1,8 +1,5 @@
 # SRS-021 JWT Service Tokens (JWT-токены для сервисов)
 
-**Статус**: APPROVED
-**Связанные**: [SRS-019 Service Authentication](SRS-019%20Service%20Authentication.ru.md), [SRS-018 Secrets Management](SRS-018%20Secrets%20Management.ru.md)
-
 ## Определение
 
 JWT (JSON Web Token) Service Tokens — подписанные токены для аутентификации межсервисных запросов. Токен выдаётся вызывающим сервисом, подписывается приватным ключом и проверяется принимающим сервисом с помощью публичного ключа — без обращения к внешнему auth-сервису.

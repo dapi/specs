@@ -1,8 +1,5 @@
 # SRS-022 OAuth 2.0 Client Credentials (OAuth 2.0 для сервисов)
 
-**Статус**: APPROVED
-**Связанные**: [SRS-019 Service Authentication](SRS-019%20Service%20Authentication.ru.md), [SRS-021 JWT Service Tokens](SRS-021%20JWT%20Service%20Tokens.ru.md)
-
 ## Определение
 
 OAuth 2.0 Client Credentials — grant flow (RFC 6749 §4.4), при котором сервис аутентифицируется с помощью `client_id` и `client_secret` для получения access token от централизованного authorization server. Токен используется для последующих API-вызовов.

@@ -1,8 +1,5 @@
 # SRS-020 mTLS Authentication
 
-**Status**: APPROVED
-**Related**: [SRS-019 Service Authentication](SRS-019%20Service%20Authentication.md), [SRS-018 Secrets Management](SRS-018%20Secrets%20Management.md)
-
 ## Definition
 
 Mutual TLS (mTLS) is a service authentication method where both client and server present X.509 certificates signed by a trusted Certificate Authority (CA), establishing mutual cryptographic proof of identity.

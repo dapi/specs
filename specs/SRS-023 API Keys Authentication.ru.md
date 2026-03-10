@@ -1,8 +1,5 @@
 # SRS-023 API Keys Authentication (Аутентификация по API-ключам)
 
-**Статус**: APPROVED
-**Связанные**: [SRS-019 Service Authentication](SRS-019%20Service%20Authentication.ru.md), [SRS-018 Secrets Management](SRS-018%20Secrets%20Management.ru.md)
-
 ## Определение
 
 API Keys — общие секреты, передаваемые в каждом запросе (обычно через HTTP-заголовок) для идентификации и аутентификации вызывающего сервиса. Простейший механизм аутентификации — не требует PKI или auth-сервера.

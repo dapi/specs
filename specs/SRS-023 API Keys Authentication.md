@@ -1,8 +1,5 @@
 # SRS-023 API Keys Authentication
 
-**Status**: APPROVED
-**Related**: [SRS-019 Service Authentication](SRS-019%20Service%20Authentication.md), [SRS-018 Secrets Management](SRS-018%20Secrets%20Management.md)
-
 ## Definition
 
 API Keys are shared secrets passed in each request (typically via an HTTP header) to identify and authenticate the calling service. The simplest authentication mechanism — no PKI or auth server required.

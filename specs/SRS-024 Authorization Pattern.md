@@ -1,7 +1,5 @@
 # SRS-024 Authorization Pattern
 
-**Related**: [SRS-019 Service Authentication](SRS-019%20Service%20Authentication.md), [SRS-021 JWT Service Tokens](SRS-021%20JWT%20Service%20Tokens.md), [SRS-022 OAuth 2.0 Client Credentials](SRS-022%20OAuth%202.0%20Client%20Credentials.md)
-
 ## Definition
 
 Authorization is the process of determining whether an authenticated user/service has the right to perform a specific action or access a resource.

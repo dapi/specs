@@ -1,8 +1,5 @@
 # SRS-020 mTLS Authentication (Взаимная TLS-аутентификация)
 
-**Статус**: APPROVED
-**Связанные**: [SRS-019 Service Authentication](SRS-019%20Service%20Authentication.ru.md), [SRS-018 Secrets Management](SRS-018%20Secrets%20Management.ru.md)
-
 ## Определение
 
 Mutual TLS (mTLS) — метод аутентификации сервисов, при котором и клиент, и сервер предоставляют X.509-сертификаты, подписанные доверенным Центром сертификации (CA), устанавливая взаимное криптографическое подтверждение личности.

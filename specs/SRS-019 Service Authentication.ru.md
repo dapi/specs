@@ -1,7 +1,5 @@
 # SRS-019 Service Authentication (Аутентификация сервисов)
 
-**Статус**: APPROVED
-**Связанные**: [SRS-018 Secrets Management](SRS-018%20Secrets%20Management.ru.md), [SRS-024 Authorization Pattern](SRS-024%20Authorization%20Pattern.ru.md)
 
 ## Определение
 

@@ -1,7 +1,5 @@
 # SRS-019 Service Authentication
 
-**Status**: APPROVED
-**Related**: [SRS-018 Secrets Management](SRS-018%20Secrets%20Management.md), [SRS-024 Authorization Pattern](SRS-024%20Authorization%20Pattern.md)
 
 ## Definition
 

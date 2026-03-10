@@ -1,8 +1,5 @@
 # SRS-022 OAuth 2.0 Client Credentials
 
-**Status**: APPROVED
-**Related**: [SRS-019 Service Authentication](SRS-019%20Service%20Authentication.md), [SRS-021 JWT Service Tokens](SRS-021%20JWT%20Service%20Tokens.md)
-
 ## Definition
 
 OAuth 2.0 Client Credentials is a grant flow (RFC 6749 §4.4) where a service authenticates using its `client_id` and `client_secret` to obtain an access token from a centralized authorization server. The token is then used for subsequent API calls.
