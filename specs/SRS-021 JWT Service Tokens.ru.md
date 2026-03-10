@@ -24,15 +24,26 @@ Header.Payload.Signature
 
 ```json
 {
-  "iss": "service-a",          // Issuer — имя вызывающего сервиса
-  "sub": "service-a",          // Subject — то же что iss для service tokens
-  "aud": "target-service",     // Audience — получатель
-  "exp": 1710000000,           // Время истечения (Unix timestamp)
-  "iat": 1709996400,           // Время выдачи
-  "jti": "uuid-v4-unique-id",  // JWT ID — для защиты от replay-атак
-  "scope": ["read", "write"]   // Разрешения
+  "exp": 1710000000,           // Время истечения (Unix timestamp) — всегда обязателен
+  "iat": 1709996400,           // Время выдачи — всегда обязателен
+  "jti": "uuid-v4-unique-id",  // JWT ID — защита от replay-атак, всегда обязателен
+  "iss": "service-a",          // Issuer — обязателен если задан JWT_ISSUER
+  "aud": "target-service",     // Audience — обязателен если задан JWT_AUDIENCE
+  "sub": "service-a",          // Subject — рекомендован
+  "scope": ["read", "write"]   // Разрешения — опционально
 }
 ```
+
+**Правила валидации:**
+
+| Claim | Обязательность | Поведение |
+|-------|---------------|-----------|
+| `exp` | Всегда | 401 если истёк |
+| `iat` | Всегда | 401 если отсутствует; 401 если `now - iat > JWT_EXPIRATION + JWT_CLOCK_SKEW` |
+| `jti` | Всегда | 401 если отсутствует или пустая строка |
+| `iss` | Если задан `JWT_ISSUER` | 401 если значение не совпадает с `JWT_ISSUER` |
+| `aud` | Если задан `JWT_AUDIENCE` | 401 если значение не содержит `JWT_AUDIENCE` |
+| `scope` | Опционально | Используется для проверки разрешений если присутствует |
 
 ## Реализация
 
@@ -68,12 +79,21 @@ def verify_service_token(token: str, public_key: str,
             token,
             public_key,
             algorithms=["RS256"],
-            audience=expected_audience,
-            options={"require": ["exp", "iss", "aud", "jti", "scope"]}
+            audience=expected_audience if expected_audience else None,
+            issuer=allowed_issuers[0] if len(allowed_issuers) == 1 else None,
+            options={"require": ["exp", "iat", "jti"]}
         )
 
-        if payload["iss"] not in allowed_issuers:
-            raise ValueError(f"Issuer {payload['iss']} не в списке разрешённых")
+        # Проверка возраста по iat — отклоняем даже если exp ещё не истёк
+        age = time.time() - payload["iat"]
+        if age > jwt_expiration + jwt_clock_skew:
+            raise AuthError("Токен слишком старый")
+
+        if not payload.get("jti"):
+            raise AuthError("Отсутствует jti")
+
+        if allowed_issuers and payload.get("iss") not in allowed_issuers:
+            raise AuthError(f"Issuer {payload.get('iss')} не разрешён")
 
         return payload
 

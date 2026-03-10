@@ -24,15 +24,26 @@ Header.Payload.Signature
 
 ```json
 {
-  "iss": "service-a",          // Issuer — calling service name
-  "sub": "service-a",          // Subject — same as issuer for service tokens
-  "aud": "target-service",     // Audience — intended recipient
-  "exp": 1710000000,           // Expiration time (Unix timestamp)
-  "iat": 1709996400,           // Issued at
-  "jti": "uuid-v4-unique-id",  // JWT ID — for replay prevention
-  "scope": ["read", "write"]   // Permissions
+  "exp": 1710000000,           // Expiration time (Unix timestamp) — always required
+  "iat": 1709996400,           // Issued at — always required
+  "jti": "uuid-v4-unique-id",  // JWT ID — for replay prevention, always required
+  "iss": "service-a",          // Issuer — required if JWT_ISSUER is configured
+  "aud": "target-service",     // Audience — required if JWT_AUDIENCE is configured
+  "sub": "service-a",          // Subject — recommended
+  "scope": ["read", "write"]   // Permissions — optional
 }
 ```
+
+**Validation rules:**
+
+| Claim | Required | Behavior |
+|-------|----------|----------|
+| `exp` | Always | 401 if expired |
+| `iat` | Always | 401 if missing; 401 if `now - iat > JWT_EXPIRATION + JWT_CLOCK_SKEW` |
+| `jti` | Always | 401 if missing or empty string |
+| `iss` | If `JWT_ISSUER` env is set | 401 if value doesn't match `JWT_ISSUER` |
+| `aud` | If `JWT_AUDIENCE` env is set | 401 if value doesn't contain `JWT_AUDIENCE` |
+| `scope` | Optional | Used for permission checks if present |
 
 ## Implementation
 
@@ -68,12 +79,21 @@ def verify_service_token(token: str, public_key: str,
             token,
             public_key,
             algorithms=["RS256"],
-            audience=expected_audience,
-            options={"require": ["exp", "iss", "aud", "jti", "scope"]}
+            audience=expected_audience if expected_audience else None,
+            issuer=allowed_issuers[0] if len(allowed_issuers) == 1 else None,
+            options={"require": ["exp", "iat", "jti"]}
         )
 
-        if payload["iss"] not in allowed_issuers:
-            raise ValueError(f"Issuer {payload['iss']} not in allowed list")
+        # iat-based age check — reject even if exp is still valid
+        age = time.time() - payload["iat"]
+        if age > jwt_expiration + jwt_clock_skew:
+            raise AuthError("Token too old")
+
+        if not payload.get("jti"):
+            raise AuthError("Missing jti")
+
+        if allowed_issuers and payload.get("iss") not in allowed_issuers:
+            raise AuthError(f"Issuer {payload.get('iss')} not allowed")
 
         return payload
 
