@@ -1,4 +1,6 @@
-# SRS-020 Authorization Pattern (Контроль доступа)
+# SRS-024 Authorization Pattern (Контроль доступа)
+
+**Связанные**: [SRS-019 Service Authentication](SRS-019%20Service%20Authentication.ru.md), [SRS-021 JWT Service Tokens](SRS-021%20JWT%20Service%20Tokens.ru.md), [SRS-022 OAuth 2.0 Client Credentials](SRS-022%20OAuth%202.0%20Client%20Credentials.ru.md)
 
 ## Определение
 

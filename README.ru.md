@@ -42,7 +42,11 @@
 | [SRS-017](specs/SRS-017%20Database%20Connection%20Pooling.ru.md) | Database Connection Pooling | P1 | Developer, DBA |
 | [SRS-018](specs/SRS-018%20Secrets%20Management.ru.md) | Secrets Management | P1 | Developer, DevOps, Security |
 | [SRS-019](specs/SRS-019%20Service%20Authentication.ru.md) | Service Authentication | P1 | Developer, Security |
-| [SRS-020](specs/SRS-020%20Authorization%20Pattern.ru.md) | Authorization Pattern | P1 | Developer, Security |
+| [SRS-020](specs/SRS-020%20mTLS%20Authentication.ru.md) | mTLS Authentication | P1 | Developer, Security |
+| [SRS-021](specs/SRS-021%20JWT%20Service%20Tokens.ru.md) | JWT Service Tokens | P1 | Developer, Security |
+| [SRS-022](specs/SRS-022%20OAuth%202.0%20Client%20Credentials.ru.md) | OAuth 2.0 Client Credentials | P1 | Developer, Security |
+| [SRS-023](specs/SRS-023%20API%20Keys%20Authentication.ru.md) | API Keys Authentication | P1 | Developer, Security |
+| [SRS-024](specs/SRS-024%20Authorization%20Pattern.ru.md) | Authorization Pattern | P1 | Developer, Security |
 
 ---
 
@@ -127,7 +131,7 @@
 - **Надежность**: [SRS-001](specs/SRS-001%20Stateless%20Services.ru.md), [SRS-007](specs/SRS-007%20Circuit%20Breaker.ru.md), [SRS-008](specs/SRS-008%20Graceful%20Shutdown.ru.md), [SRS-009](specs/SRS-009%20Blocking%20Timeouts.ru.md), [SRS-013](specs/SRS-013%20Retry%20Pattern.ru.md)
 - **Наблюдаемость**: [SRG-001](specs/SRG-001%20Metrics%20Collection.ru.md), [SRG-002](specs/SRG-002%20Logging.ru.md), [SRG-003](specs/SRG-003%20Error%20Tracking.ru.md), [SRG-004](specs/SRG-004%20Distributed%20Tracing.ru.md)
 - **Конфигурация**: [SRS-002](specs/SRS-002%20Environment%20Variables.ru.md), [SRS-003](specs/SRS-003%20Application%20Versioning.ru.md)
-- **Безопасность**: [SRS-018](specs/SRS-018%20Secrets%20Management.ru.md), [SRS-019](specs/SRS-019%20Service%20Authentication.ru.md), [SRS-020](specs/SRS-020%20Authorization%20Pattern.ru.md)
+- **Безопасность**: [SRS-018](specs/SRS-018%20Secrets%20Management.ru.md), [SRS-019](specs/SRS-019%20Service%20Authentication.ru.md), [SRS-020](specs/SRS-020%20mTLS%20Authentication.ru.md), [SRS-021](specs/SRS-021%20JWT%20Service%20Tokens.ru.md), [SRS-022](specs/SRS-022%20OAuth%202.0%20Client%20Credentials.ru.md), [SRS-023](specs/SRS-023%20API%20Keys%20Authentication.ru.md), [SRS-024](specs/SRS-024%20Authorization%20Pattern.ru.md)
 
 ### Сводка для архитектора
 Ключевые паттерны для системных архитекторов:

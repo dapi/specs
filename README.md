@@ -42,7 +42,11 @@ Technical requirements that define what software systems must implement.
 | [SRS-017](specs/SRS-017%20Database%20Connection%20Pooling.md) | Database Connection Pooling | P1 | Developer, DBA |
 | [SRS-018](specs/SRS-018%20Secrets%20Management.md) | Secrets Management | P1 | Developer, DevOps, Security |
 | [SRS-019](specs/SRS-019%20Service%20Authentication.md) | Service Authentication | P1 | Developer, Security |
-| [SRS-020](specs/SRS-020%20Authorization%20Pattern.md) | Authorization Pattern | P1 | Developer, Security |
+| [SRS-020](specs/SRS-020%20mTLS%20Authentication.md) | mTLS Authentication | P1 | Developer, Security |
+| [SRS-021](specs/SRS-021%20JWT%20Service%20Tokens.md) | JWT Service Tokens | P1 | Developer, Security |
+| [SRS-022](specs/SRS-022%20OAuth%202.0%20Client%20Credentials.md) | OAuth 2.0 Client Credentials | P1 | Developer, Security |
+| [SRS-023](specs/SRS-023%20API%20Keys%20Authentication.md) | API Keys Authentication | P1 | Developer, Security |
+| [SRS-024](specs/SRS-024%20Authorization%20Pattern.md) | Authorization Pattern | P1 | Developer, Security |
 
 ---
 
@@ -127,7 +131,7 @@ Essential specifications for application developers:
 - **Reliability**: [SRS-001](specs/SRS-001%20Stateless%20Services.md), [SRS-007](specs/SRS-007%20Circuit%20Breaker.md), [SRS-008](specs/SRS-008%20Graceful%20Shutdown.md), [SRS-009](specs/SRS-009%20Blocking%20Timeouts.md), [SRS-013](specs/SRS-013%20Retry%20Pattern.md)
 - **Observability**: [SRG-001](specs/SRG-001%20Metrics%20Collection.md), [SRG-002](specs/SRG-002%20Logging.md), [SRG-003](specs/SRG-003%20Error%20Tracking.md), [SRG-004](specs/SRG-004%20Distributed%20Tracing.md)
 - **Configuration**: [SRS-002](specs/SRS-002%20Environment%20Variables.md), [SRS-003](specs/SRS-003%20Application%20Versioning.md)
-- **Security**: [SRS-018](specs/SRS-018%20Secrets%20Management.md), [SRS-019](specs/SRS-019%20Service%20Authentication.md), [SRS-020](specs/SRS-020%20Authorization%20Pattern.md)
+- **Security**: [SRS-018](specs/SRS-018%20Secrets%20Management.md), [SRS-019](specs/SRS-019%20Service%20Authentication.md), [SRS-020](specs/SRS-020%20mTLS%20Authentication.md), [SRS-021](specs/SRS-021%20JWT%20Service%20Tokens.md), [SRS-022](specs/SRS-022%20OAuth%202.0%20Client%20Credentials.md), [SRS-023](specs/SRS-023%20API%20Keys%20Authentication.md), [SRS-024](specs/SRS-024%20Authorization%20Pattern.md)
 
 ### Architect Summary
 Key patterns for system architects:
