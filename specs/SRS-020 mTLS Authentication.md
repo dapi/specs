@@ -109,7 +109,8 @@ response = client.get("https://target-service/api/data")
 ### Server-side Certificate Verification (FastAPI)
 
 ```python
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
@@ -119,7 +120,7 @@ async def verify_mtls(request: Request, call_next):
     # Block direct access to the application port at the network layer.
     client_verify = request.headers.get("X-SSL-Client-Verify")
     if client_verify != "SUCCESS":
-        raise HTTPException(status_code=401, detail="Client certificate required")
+        return JSONResponse(status_code=401, content={"detail": "Client certificate required"})
 
     # Extract service name from certificate DN: CN=service-name,O=company
     client_dn = request.headers.get("X-SSL-Client-DN", "")

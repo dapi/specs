@@ -113,7 +113,8 @@ def get_data():
 ### FastAPI Middleware
 
 ```python
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
@@ -124,11 +125,11 @@ async def api_key_middleware(request: Request, call_next):
 
     raw_key = request.headers.get("X-API-Key")
     if not raw_key:
-        raise HTTPException(status_code=401, detail="API key required")
+        return JSONResponse(status_code=401, content={"detail": "API key required"})
 
     service = await lookup_service_by_key_async(raw_key)
     if service is None:
-        raise HTTPException(status_code=403, detail="Invalid API key")
+        return JSONResponse(status_code=403, content={"detail": "Invalid API key"})
 
     request.state.service_name = service.name
     return await call_next(request)

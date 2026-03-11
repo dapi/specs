@@ -27,8 +27,8 @@ Header.Payload.Signature
   "exp": 1710000000,           // Время истечения (Unix timestamp) — всегда обязателен
   "iat": 1709996400,           // Время выдачи — всегда обязателен
   "jti": "uuid-v4-unique-id",  // JWT ID — уникальный идентификатор для аудита/поиска replay, всегда обязателен
-  "iss": "service-a",          // Issuer — обязателен если задан JWT_ISSUER
-  "aud": "target-service",     // Audience — обязателен если задан JWT_AUDIENCE
+  "iss": "service-a",          // Issuer — обязателен если задан SERVICE_AUTH_JWT_ISSUER
+  "aud": "target-service",     // Audience — обязателен если задан SERVICE_AUTH_JWT_AUDIENCE
   "sub": "service-a",          // Subject — рекомендован
   "scope": ["read", "write"]   // Разрешения — опционально
 }
@@ -39,10 +39,10 @@ Header.Payload.Signature
 | Claim | Обязательность | Поведение |
 |-------|---------------|-----------|
 | `exp` | Всегда | 401 если истёк |
-| `iat` | Всегда | 401 если отсутствует; 401 если токен выдан в будущем дальше `JWT_CLOCK_SKEW`; 401 если `now - iat > JWT_EXPIRATION + JWT_CLOCK_SKEW` |
+| `iat` | Всегда | 401 если отсутствует; 401 если токен выдан в будущем дальше `SERVICE_AUTH_JWT_CLOCK_SKEW`; 401 если `now - iat > SERVICE_AUTH_JWT_EXPIRATION + SERVICE_AUTH_JWT_CLOCK_SKEW` |
 | `jti` | Всегда | 401 если отсутствует или пустая строка; если включена replay-защита, 401 при повторном `jti` |
-| `iss` | Если задан `JWT_ISSUER` | 401 если значение не совпадает с `JWT_ISSUER` |
-| `aud` | Если задан `JWT_AUDIENCE` (рекомендуется в production) | 401 если значение не содержит `JWT_AUDIENCE` |
+| `iss` | Если задан `SERVICE_AUTH_JWT_ISSUER` | 401 если значение не совпадает с `SERVICE_AUTH_JWT_ISSUER` |
+| `aud` | Если задан `SERVICE_AUTH_JWT_AUDIENCE` (рекомендуется в production) | 401 если значение не содержит `SERVICE_AUTH_JWT_AUDIENCE` |
 | `scope` | Опционально | Используется для проверки разрешений если присутствует |
 
 ## Реализация

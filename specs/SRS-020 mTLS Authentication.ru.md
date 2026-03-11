@@ -109,7 +109,8 @@ response = client.get("https://target-service/api/data")
 ### Серверная проверка сертификата (FastAPI)
 
 ```python
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
@@ -119,7 +120,7 @@ async def verify_mtls(request: Request, call_next):
     # который завершил mTLS. Прямой доступ к порту приложения должен быть закрыт.
     client_verify = request.headers.get("X-SSL-Client-Verify")
     if client_verify != "SUCCESS":
-        raise HTTPException(status_code=401, detail="Client certificate required")
+        return JSONResponse(status_code=401, content={"detail": "Client certificate required"})
 
     # Извлекаем имя сервиса из DN сертификата: CN=service-name,O=company
     client_dn = request.headers.get("X-SSL-Client-DN", "")

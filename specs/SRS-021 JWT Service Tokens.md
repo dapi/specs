@@ -27,8 +27,8 @@ Header.Payload.Signature
   "exp": 1710000000,           // Expiration time (Unix timestamp) — always required
   "iat": 1709996400,           // Issued at — always required
   "jti": "uuid-v4-unique-id",  // JWT ID — unique token identifier for audit/replay detection, always required
-  "iss": "service-a",          // Issuer — required if JWT_ISSUER is configured
-  "aud": "target-service",     // Audience — required if JWT_AUDIENCE is configured
+  "iss": "service-a",          // Issuer — required if SERVICE_AUTH_JWT_ISSUER is configured
+  "aud": "target-service",     // Audience — required if SERVICE_AUTH_JWT_AUDIENCE is configured
   "sub": "service-a",          // Subject — recommended
   "scope": ["read", "write"]   // Permissions — optional
 }
@@ -39,10 +39,10 @@ Header.Payload.Signature
 | Claim | Required | Behavior |
 |-------|----------|----------|
 | `exp` | Always | 401 if expired |
-| `iat` | Always | 401 if missing; 401 if issued in the future beyond `JWT_CLOCK_SKEW`; 401 if `now - iat > JWT_EXPIRATION + JWT_CLOCK_SKEW` |
+| `iat` | Always | 401 if missing; 401 if issued in the future beyond `SERVICE_AUTH_JWT_CLOCK_SKEW`; 401 if `now - iat > SERVICE_AUTH_JWT_EXPIRATION + SERVICE_AUTH_JWT_CLOCK_SKEW` |
 | `jti` | Always | 401 if missing or empty string; if replay detection is enabled, 401 on reused `jti` |
-| `iss` | If `JWT_ISSUER` env is set | 401 if value doesn't match `JWT_ISSUER` |
-| `aud` | If `JWT_AUDIENCE` env is set (recommended in production) | 401 if value doesn't contain `JWT_AUDIENCE` |
+| `iss` | If `SERVICE_AUTH_JWT_ISSUER` env is set | 401 if value doesn't match `SERVICE_AUTH_JWT_ISSUER` |
+| `aud` | If `SERVICE_AUTH_JWT_AUDIENCE` env is set (recommended in production) | 401 if value doesn't contain `SERVICE_AUTH_JWT_AUDIENCE` |
 | `scope` | Optional | Used for permission checks if present |
 
 ## Implementation

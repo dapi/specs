@@ -27,8 +27,8 @@ Service A                    Auth Server              Service B
     │── GET /api/data ────────────────────────────────────>│
     │   Authorization: Bearer <token>                      │
     │                            │                        │
-    │                            │<── introspect token ───│
-    │                            │─── token valid ────────>│
+    │                            │<── POST /introspect ───│
+    │                            │─── active: true ───────>│
     │<── response ────────────────────────────────────────│
 ```
 
@@ -69,10 +69,10 @@ class TokenInfo:
     scope: str
 
 class OAuth2Client:
-    def __init__(self, token_url: str, client_id: str, client_secret: str):
+    def __init__(self, token_url: str, client_id: str, client_secret_path: str):
         self._token_url = token_url
         self._client_id = client_id
-        self._client_secret = client_secret
+        self._client_secret_path = client_secret_path
         self._tokens: dict[str, TokenInfo] = {}
         self._lock = threading.Lock()
 
@@ -93,12 +93,14 @@ class OAuth2Client:
             return token_info.access_token
 
     def _fetch_token(self, scope: str) -> TokenInfo:
+        # Re-read secret on every token fetch to pick up rotated credentials.
+        client_secret = load_secret(self._client_secret_path)
         response = httpx.post(
             self._token_url,
             data={
                 "grant_type": "client_credentials",
                 "client_id": self._client_id,
-                "client_secret": self._client_secret,
+                "client_secret": client_secret,
                 "scope": scope,
             },
         )
@@ -118,7 +120,7 @@ def load_secret(path: str) -> str:
 auth_client = OAuth2Client(
     token_url="https://auth.example.com/oauth/token",
     client_id="service-a",
-    client_secret=load_secret("/etc/secrets/service_client_secret"),
+    client_secret_path="/etc/secrets/service_client_secret",
 )
 
 def call_service_b():
@@ -173,6 +175,7 @@ async def verify_access_token(token: str) -> dict:
         signing_key.key,
         algorithms=["RS256"],
         audience="https://api.example.com",
+        issuer="https://auth.example.com",
         options={"require": ["exp", "iss", "aud"]}
     )
     return payload
