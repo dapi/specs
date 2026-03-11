@@ -220,3 +220,4 @@ service_api_key_last_rotation_timestamp{service="name"} (gauge)
 
 * [OWASP API Security — Broken Authentication](https://owasp.org/www-project-api-security/)
 * [RFC 7235 — HTTP Authentication](https://tools.ietf.org/html/rfc7235)
+* [HashiCorp Vault — управление секретами](https://www.vaultproject.io/)

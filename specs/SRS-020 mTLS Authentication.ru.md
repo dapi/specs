@@ -36,7 +36,7 @@ Mutual TLS (mTLS) — метод аутентификации сервисов, 
 
 ### Nginx
 
-```yaml
+```nginx
 server {
     listen 443 ssl;
 
@@ -215,4 +215,5 @@ service_mtls_verification_failures_total (counter)
 * [SPIFFE/SPIRE](https://spiffe.io/)
 * [cert-manager для Kubernetes](https://cert-manager.io/)
 * [Istio mTLS](https://istio.io/docs/concepts/security/)
-* [RFC 5246 — TLS Protocol](https://tools.ietf.org/html/rfc5246)
+* [RFC 8446 — TLS 1.3](https://tools.ietf.org/html/rfc8446)
+* [HashiCorp Vault — управление секретами](https://www.vaultproject.io/)

@@ -1,6 +1,5 @@
 # SRS-019 Service Authentication
 
-
 ## Definition
 
 Service Authentication is the process of verifying the authenticity of a service making a request to prevent unauthorized access to resources.
@@ -21,7 +20,7 @@ Service Authentication is the process of verifying the authenticity of a service
 | Service-to-service within cluster | [mTLS](SRS-020%20mTLS%20Authentication.md) |
 | External services | [JWT](SRS-021%20JWT%20Service%20Tokens.md) or [OAuth 2.0](SRS-022%20OAuth%202.0%20Client%20Credentials.md) |
 | Simple integrations | [API Keys](SRS-023%20API%20Keys%20Authentication.md) |
-| High security requirements | mTLS + JWT |
+| High security requirements | [mTLS](SRS-020%20mTLS%20Authentication.md) + [JWT](SRS-021%20JWT%20Service%20Tokens.md) |
 | Legacy systems | [API Keys](SRS-023%20API%20Keys%20Authentication.md) |
 
 ## Common Requirements

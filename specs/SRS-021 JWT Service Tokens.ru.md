@@ -60,8 +60,8 @@ def create_service_token(service_name: str, target_service: str,
         "iss": service_name,
         "sub": service_name,
         "aud": target_service,
-        "exp": time.time() + 3600,   # 1 час
-        "iat": time.time(),
+        "exp": int(time.time()) + 3600,   # 1 час
+        "iat": int(time.time()),
         "jti": str(uuid.uuid4()),
         "scope": scopes
     }
@@ -89,7 +89,7 @@ def verify_service_token(token: str, public_key: str,
             }
         )
 
-        now = time.time()
+        now = int(time.time())
         if payload["iat"] > now + jwt_clock_skew:
             raise AuthError("Токен выдан в будущем")
 
