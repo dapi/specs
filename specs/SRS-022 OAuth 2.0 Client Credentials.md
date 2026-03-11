@@ -60,6 +60,7 @@ import time
 import threading
 import httpx
 from dataclasses import dataclass
+from pathlib import Path
 
 @dataclass
 class TokenInfo:
@@ -72,17 +73,24 @@ class OAuth2Client:
         self._token_url = token_url
         self._client_id = client_id
         self._client_secret = client_secret
-        self._token: TokenInfo | None = None
+        self._tokens: dict[str, TokenInfo] = {}
         self._lock = threading.Lock()
+
+    def _scope_cache_key(self, scope: str) -> str:
+        # Normalize scope ordering so equivalent requests share the same cache entry.
+        return " ".join(sorted(scope.split()))
 
     def get_token(self, scope: str = "") -> str:
         with self._lock:
+            cache_key = self._scope_cache_key(scope)
             # Refresh 60 seconds before expiry
-            if self._token and self._token.expires_at > time.time() + 60:
-                return self._token.access_token
+            cached = self._tokens.get(cache_key)
+            if cached and cached.expires_at > time.time() + 60:
+                return cached.access_token
 
-            self._token = self._fetch_token(scope)
-            return self._token.access_token
+            token_info = self._fetch_token(scope)
+            self._tokens[cache_key] = token_info
+            return token_info.access_token
 
     def _fetch_token(self, scope: str) -> TokenInfo:
         response = httpx.post(
@@ -103,11 +111,14 @@ class OAuth2Client:
             scope=data.get("scope", ""),
         )
 
+def load_secret(path: str) -> str:
+    return Path(path).read_text().strip()
+
 # Usage
 auth_client = OAuth2Client(
     token_url="https://auth.example.com/oauth/token",
     client_id="service-a",
-    client_secret=os.getenv("SERVICE_CLIENT_SECRET"),
+    client_secret=load_secret("/etc/secrets/service_client_secret"),
 )
 
 def call_service_b():
@@ -149,16 +160,20 @@ async def require_token(
 When the auth server issues JWT access tokens, verification can be done locally:
 
 ```python
+import jwt
+
+jwks_client = jwt.PyJWKClient("https://auth.example.com/.well-known/jwks.json")
+
 async def verify_access_token(token: str) -> dict:
-    """Verify JWT access token using auth server's public key"""
-    jwks = await get_jwks("https://auth.example.com/.well-known/jwks.json")
+    """Verify JWT access token using the signing key selected by kid"""
+    signing_key = jwks_client.get_signing_key_from_jwt(token)
 
     payload = jwt.decode(
         token,
-        jwks,
+        signing_key.key,
         algorithms=["RS256"],
         audience="https://api.example.com",
-        options={"require": ["exp", "iss", "aud", "scope"]}
+        options={"require": ["exp", "iss", "aud"]}
     )
     return payload
 ```
@@ -168,7 +183,7 @@ async def verify_access_token(token: str) -> dict:
 ```
 SERVICE_AUTH_OAUTH2_TOKEN_URL=https://auth.example.com/oauth/token
 SERVICE_AUTH_OAUTH2_CLIENT_ID=service-name
-SERVICE_AUTH_OAUTH2_CLIENT_SECRET=secret          # Store in Vault/KMS
+SERVICE_AUTH_OAUTH2_CLIENT_SECRET_PATH=/etc/secrets/service_client_secret
 SERVICE_AUTH_OAUTH2_SCOPES=read,write
 SERVICE_AUTH_OAUTH2_CACHE_TOKENS=true
 SERVICE_AUTH_OAUTH2_TOKEN_CACHE_TTL=3500           # Slightly less than expires_in
@@ -190,14 +205,14 @@ service_oauth2_introspection_duration_seconds (histogram)
 
 ✅ **Do**
 * Cache tokens until 60 seconds before expiry
-* Store `client_secret` in Vault or KMS, not in config files
+* Load `client_secret` from Vault, KMS, or a mounted secret file
 * Use scopes to limit access to only what the service needs
 * Prefer local JWT verification over introspection for performance
 * Use short `expires_in` (1 hour max)
 * Rotate `client_secret` regularly
 
 ❌ **Don't**
-* Store `client_secret` in source code or plain environment variables
+* Store `client_secret` in source code, checked-in config, or unencrypted files
 * Request tokens on every API call — always cache
 * Use overly broad scopes
 * Skip token expiry validation

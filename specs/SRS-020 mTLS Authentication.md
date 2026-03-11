@@ -57,6 +57,8 @@ server {
 }
 ```
 
+These identity headers MUST be added only by a trusted TLS-terminating proxy or service mesh sidecar. The application MUST NOT be directly reachable from untrusted networks, and any client-supplied `X-SSL-Client-*` headers MUST be stripped or overwritten at the edge.
+
 ### Kubernetes / Istio
 
 ```yaml
@@ -113,6 +115,8 @@ app = FastAPI()
 
 @app.middleware("http")
 async def verify_mtls(request: Request, call_next):
+    # Trust these headers only from the local/trusted proxy that terminated mTLS.
+    # Block direct access to the application port at the network layer.
     client_verify = request.headers.get("X-SSL-Client-Verify")
     if client_verify != "SUCCESS":
         raise HTTPException(status_code=401, detail="Client certificate required")
@@ -184,6 +188,7 @@ service_mtls_verification_failures_total (counter)
 * Alert on certificate expiry at 30/7/1 day thresholds
 * Use short-lived certificates (24h–30d) with automatic renewal
 * Store private keys in secure storage (Vault, KMS)
+* Trust forwarded certificate headers only from a hardened proxy or sidecar
 
 ❌ **Don't**
 * Use self-signed certs in production without a proper CA

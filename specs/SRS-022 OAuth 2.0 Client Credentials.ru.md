@@ -60,6 +60,7 @@ import time
 import threading
 import httpx
 from dataclasses import dataclass
+from pathlib import Path
 
 @dataclass
 class TokenInfo:
@@ -72,17 +73,24 @@ class OAuth2Client:
         self._token_url = token_url
         self._client_id = client_id
         self._client_secret = client_secret
-        self._token: TokenInfo | None = None
+        self._tokens: dict[str, TokenInfo] = {}
         self._lock = threading.Lock()
+
+    def _scope_cache_key(self, scope: str) -> str:
+        # Нормализуем порядок scopes, чтобы эквивалентные запросы делили один cache key.
+        return " ".join(sorted(scope.split()))
 
     def get_token(self, scope: str = "") -> str:
         with self._lock:
+            cache_key = self._scope_cache_key(scope)
             # Обновляем за 60 секунд до истечения
-            if self._token and self._token.expires_at > time.time() + 60:
-                return self._token.access_token
+            cached = self._tokens.get(cache_key)
+            if cached and cached.expires_at > time.time() + 60:
+                return cached.access_token
 
-            self._token = self._fetch_token(scope)
-            return self._token.access_token
+            token_info = self._fetch_token(scope)
+            self._tokens[cache_key] = token_info
+            return token_info.access_token
 
     def _fetch_token(self, scope: str) -> TokenInfo:
         response = httpx.post(
@@ -103,11 +111,14 @@ class OAuth2Client:
             scope=data.get("scope", ""),
         )
 
+def load_secret(path: str) -> str:
+    return Path(path).read_text().strip()
+
 # Использование
 auth_client = OAuth2Client(
     token_url="https://auth.example.com/oauth/token",
     client_id="service-a",
-    client_secret=os.getenv("SERVICE_CLIENT_SECRET"),
+    client_secret=load_secret("/etc/secrets/service_client_secret"),
 )
 
 def call_service_b():
@@ -149,16 +160,20 @@ async def require_token(
 Если auth-сервер выдаёт JWT access tokens, проверку можно делать локально:
 
 ```python
+import jwt
+
+jwks_client = jwt.PyJWKClient("https://auth.example.com/.well-known/jwks.json")
+
 async def verify_access_token(token: str) -> dict:
-    """Проверка JWT access token с публичным ключом auth-сервера"""
-    jwks = await get_jwks("https://auth.example.com/.well-known/jwks.json")
+    """Проверка JWT access token с выбором signing key по kid"""
+    signing_key = jwks_client.get_signing_key_from_jwt(token)
 
     payload = jwt.decode(
         token,
-        jwks,
+        signing_key.key,
         algorithms=["RS256"],
         audience="https://api.example.com",
-        options={"require": ["exp", "iss", "aud", "scope"]}
+        options={"require": ["exp", "iss", "aud"]}
     )
     return payload
 ```
@@ -168,7 +183,7 @@ async def verify_access_token(token: str) -> dict:
 ```
 SERVICE_AUTH_OAUTH2_TOKEN_URL=https://auth.example.com/oauth/token
 SERVICE_AUTH_OAUTH2_CLIENT_ID=service-name
-SERVICE_AUTH_OAUTH2_CLIENT_SECRET=secret          # Хранить в Vault/KMS
+SERVICE_AUTH_OAUTH2_CLIENT_SECRET_PATH=/etc/secrets/service_client_secret
 SERVICE_AUTH_OAUTH2_SCOPES=read,write
 SERVICE_AUTH_OAUTH2_CACHE_TOKENS=true
 SERVICE_AUTH_OAUTH2_TOKEN_CACHE_TTL=3500           # Чуть меньше expires_in
@@ -190,14 +205,14 @@ service_oauth2_introspection_duration_seconds (histogram)
 
 ✅ **Делать**
 * Кэшировать токены до 60 секунд до истечения
-* Хранить `client_secret` в Vault или KMS, не в конфиг-файлах
+* Загружать `client_secret` из Vault, KMS или из примонтированного secret-файла
 * Использовать scopes для ограничения доступа до минимально необходимого
 * Предпочитать локальную JWT-верификацию интроспекции — для производительности
 * Устанавливать короткий `expires_in` (максимум 1 час)
 * Регулярно ротировать `client_secret`
 
 ❌ **Не делать**
-* Хранить `client_secret` в коде или plain переменных окружения
+* Хранить `client_secret` в коде, в закоммиченных конфигах или в незашифрованных файлах
 * Запрашивать токен при каждом API-вызове — всегда кэшировать
 * Использовать слишком широкие scopes
 * Пропускать валидацию срока истечения токена

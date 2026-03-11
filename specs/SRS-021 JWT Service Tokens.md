@@ -26,7 +26,7 @@ Header.Payload.Signature
 {
   "exp": 1710000000,           // Expiration time (Unix timestamp) — always required
   "iat": 1709996400,           // Issued at — always required
-  "jti": "uuid-v4-unique-id",  // JWT ID — for replay prevention, always required
+  "jti": "uuid-v4-unique-id",  // JWT ID — unique token identifier for audit/replay detection, always required
   "iss": "service-a",          // Issuer — required if JWT_ISSUER is configured
   "aud": "target-service",     // Audience — required if JWT_AUDIENCE is configured
   "sub": "service-a",          // Subject — recommended
@@ -39,10 +39,10 @@ Header.Payload.Signature
 | Claim | Required | Behavior |
 |-------|----------|----------|
 | `exp` | Always | 401 if expired |
-| `iat` | Always | 401 if missing; 401 if `now - iat > JWT_EXPIRATION + JWT_CLOCK_SKEW` |
-| `jti` | Always | 401 if missing or empty string |
+| `iat` | Always | 401 if missing; 401 if issued in the future beyond `JWT_CLOCK_SKEW`; 401 if `now - iat > JWT_EXPIRATION + JWT_CLOCK_SKEW` |
+| `jti` | Always | 401 if missing or empty string; if replay detection is enabled, 401 on reused `jti` |
 | `iss` | If `JWT_ISSUER` env is set | 401 if value doesn't match `JWT_ISSUER` |
-| `aud` | If `JWT_AUDIENCE` env is set | 401 if value doesn't contain `JWT_AUDIENCE` |
+| `aud` | If `JWT_AUDIENCE` env is set (recommended in production) | 401 if value doesn't contain `JWT_AUDIENCE` |
 | `scope` | Optional | Used for permission checks if present |
 
 ## Implementation
@@ -72,28 +72,43 @@ def create_service_token(service_name: str, target_service: str,
 
 ```python
 def verify_service_token(token: str, public_key: str,
-                         expected_audience: str,
-                         allowed_issuers: list[str]) -> dict:
+                         expected_audience: str | None,
+                         allowed_issuers: set[str],
+                         jwt_expiration: int,
+                         jwt_clock_skew: int = 60,
+                         replay_cache=None) -> dict:
     try:
         payload = jwt.decode(
             token,
             public_key,
             algorithms=["RS256"],
             audience=expected_audience if expected_audience else None,
-            issuer=allowed_issuers[0] if len(allowed_issuers) == 1 else None,
-            options={"require": ["exp", "iat", "jti"]}
+            options={
+                "require": ["exp", "iat", "jti"],
+                "verify_aud": bool(expected_audience),
+            }
         )
 
+        now = time.time()
+        if payload["iat"] > now + jwt_clock_skew:
+            raise AuthError("Token issued in the future")
+
         # iat-based age check — reject even if exp is still valid
-        age = time.time() - payload["iat"]
+        age = now - payload["iat"]
         if age > jwt_expiration + jwt_clock_skew:
             raise AuthError("Token too old")
 
-        if not payload.get("jti"):
+        jti = payload.get("jti")
+        if not jti:
             raise AuthError("Missing jti")
 
         if allowed_issuers and payload.get("iss") not in allowed_issuers:
             raise AuthError(f"Issuer {payload.get('iss')} not allowed")
+
+        if replay_cache is not None:
+            ttl = max(1, int(payload["exp"] - now))
+            if not replay_cache.mark_first_seen(jti, ttl=ttl):
+                raise AuthError("Replay detected")
 
         return payload
 
@@ -104,6 +119,8 @@ def verify_service_token(token: str, public_key: str,
     except jwt.InvalidTokenError as e:
         raise AuthError(f"Invalid token: {e}")
 ```
+
+If replay protection is required, `replay_cache` must be backed by a shared store such as Redis with `SETNX`-style semantics and a TTL lasting until `exp`. A bare `jti` claim by itself is not enough to stop token replay.
 
 ### FastAPI Middleware
 
@@ -124,7 +141,9 @@ def get_service(
         token=credentials.credentials,
         public_key=PUBLIC_KEY,
         expected_audience="target-service",
-        allowed_issuers=list(ALLOWED_SERVICES)
+        allowed_issuers=ALLOWED_SERVICES,
+        jwt_expiration=3600,
+        jwt_clock_skew=60,
     )
     return payload
 
@@ -151,7 +170,9 @@ async def auth_middleware(request: Request, call_next):
             token=auth_header.removeprefix("Bearer "),
             public_key=PUBLIC_KEY,
             expected_audience="this-service",
-            allowed_issuers=ALLOWED_SERVICES
+            allowed_issuers=ALLOWED_SERVICES,
+            jwt_expiration=3600,
+            jwt_clock_skew=60,
         )
         request.state.service_name = payload["iss"]
         request.state.scopes = payload.get("scope", [])
@@ -224,17 +245,18 @@ service_jwt_token_cache_misses_total (counter)
 ✅ **Do**
 * Use RS256 (asymmetric) — never HS256 for service tokens
 * Set short expiration (1 hour max)
-* Include `jti` claim for replay prevention
+* Include `jti` and back it with a shared cache if replay detection is required
 * Cache tokens on the client side until near expiry
 * Rotate key pairs regularly (every 90 days)
 * Log all verification failures with token metadata (not the token itself)
+* Reject tokens whose `iat` is in the future beyond allowed clock skew
 
 ❌ **Don't**
 * Use symmetric HMAC (HS256) — requires sharing the secret
-* Set expiration longer than 24 hours
+* Set expiration longer than 1 hour in production
 * Log or expose raw token values
 * Trust tokens without verifying the signature
-* Skip `aud` (audience) validation
+* Skip `aud` (audience) validation in production
 
 ## Pros and Cons
 

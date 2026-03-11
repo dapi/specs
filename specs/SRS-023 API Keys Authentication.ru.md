@@ -53,10 +53,15 @@ curl "https://api.example.com/data?api_key=sk_Xt4mP9qR2v..."
 import hashlib
 import hmac
 import os
+from pathlib import Path
+
+def load_api_key_pepper() -> str:
+    path = os.getenv("SERVICE_AUTH_API_KEY_PEPPER_PATH", "/etc/secrets/api_key_pepper")
+    return Path(path).read_text().strip()
 
 def hash_api_key(raw_key: str) -> str:
     """Хешировать ключ для хранения. Использовать SHA-256 с pepper."""
-    pepper = os.getenv("API_KEY_PEPPER")  # Секретный pepper из Vault
+    pepper = load_api_key_pepper()
     return hashlib.sha256(f"{pepper}{raw_key}".encode()).hexdigest()
 
 def verify_api_key(raw_key: str, stored_hash: str) -> bool:

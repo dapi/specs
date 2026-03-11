@@ -57,6 +57,8 @@ server {
 }
 ```
 
+Эти identity-заголовки ДОЛЖНЫ добавляться только доверенным TLS-terminating proxy или service mesh sidecar. Приложение НЕ ДОЛЖНО быть доступно напрямую из недоверенных сетей, а любые клиентские `X-SSL-Client-*` заголовки должны удаляться или перезаписываться на периметре.
+
 ### Kubernetes / Istio
 
 ```yaml
@@ -113,6 +115,8 @@ app = FastAPI()
 
 @app.middleware("http")
 async def verify_mtls(request: Request, call_next):
+    # Доверять этим заголовкам можно только от локального/доверенного proxy,
+    # который завершил mTLS. Прямой доступ к порту приложения должен быть закрыт.
     client_verify = request.headers.get("X-SSL-Client-Verify")
     if client_verify != "SUCCESS":
         raise HTTPException(status_code=401, detail="Client certificate required")
@@ -184,6 +188,7 @@ service_mtls_verification_failures_total (counter)
 * Настроить оповещения об истечении за 30/7/1 день
 * Использовать краткоживущие сертификаты (24ч–30д) с автообновлением
 * Хранить приватные ключи в защищённом хранилище (Vault, KMS)
+* Доверять forwarded certificate headers только от защищённого proxy или sidecar
 
 ❌ **Не делать**
 * Использовать самоподписанные сертификаты в production без CA

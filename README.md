@@ -8,16 +8,16 @@ A comprehensive collection of specifications, patterns, guides, and operational 
 
 | Prefix | Type | Description | Count |
 |--------|------|-------------|-------|
-| **SRS** | Specifications | Technical requirements that software must conform to | 20 |
+| **SRS** | Specifications | Technical requirements that software must conform to | 24 |
 | **SRP** | Patterns | Architectural patterns and design solutions | 9 |
 | **SRG** | Guides | How-to documentation and implementation guides | 19 |
 | **SRO** | Operations | Operational practices and processes | 9 |
 
-**Total: 57 documents**
+**Total: 61 documents**
 
 ---
 
-## SRS - Specifications (20)
+## SRS - Specifications (24)
 
 Technical requirements that define what software systems must implement.
 
@@ -118,9 +118,9 @@ Operational practices, processes, and procedures for running reliable systems.
 
 | Priority | Description | Documents |
 |----------|-------------|-----------|
-| **P1** | Critical - Must implement | 32 |
-| **P2** | Important - Should implement | 22 |
-| **P3** | Nice to have | 3 |
+| **P1** | Critical - Must implement | 36 |
+| **P2** | Important - Should implement | 23 |
+| **P3** | Nice to have | 2 |
 
 ---
 
