@@ -220,13 +220,21 @@ def get_service_token(target_service: str) -> str:
 
 ## Конфигурация
 
+**Issuer** (подписывает токены, хранит приватный ключ):
+
 ```
 SERVICE_AUTH_JWT_ALGORITHM=RS256
 SERVICE_AUTH_JWT_ISSUER=my-service
-SERVICE_AUTH_JWT_AUDIENCE=target-service
 SERVICE_AUTH_JWT_EXPIRATION=3600
-SERVICE_AUTH_JWT_CLOCK_SKEW=60
 SERVICE_AUTH_JWT_PRIVATE_KEY_PATH=/etc/keys/private.pem
+```
+
+**Receiver** (проверяет токены, хранит только публичный ключ):
+
+```
+SERVICE_AUTH_JWT_ALGORITHM=RS256
+SERVICE_AUTH_JWT_AUDIENCE=target-service
+SERVICE_AUTH_JWT_CLOCK_SKEW=60
 SERVICE_AUTH_JWT_PUBLIC_KEY_PATH=/etc/keys/public.pem
 ```
 
