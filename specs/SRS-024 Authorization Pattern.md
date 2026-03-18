@@ -1,4 +1,4 @@
-# SRS-020 Authorization Pattern
+# SRS-024 Authorization Pattern
 
 ## Definition
 
