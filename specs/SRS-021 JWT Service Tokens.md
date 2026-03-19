@@ -11,6 +11,7 @@ JWT (JSON Web Token) Service Tokens are signed tokens used to authenticate servi
 | External API authentication | ✅ Preferred |
 | Inter-service with shared PKI | ✅ Good fit |
 | Stateless verification needed | ✅ Good fit |
+| Multiple issuers, single receiver | ✅ JWKS mode |
 | Immediate token revocation needed | ❌ Use OAuth 2.0 |
 | Intra-cluster (same trust domain) | ❌ Use mTLS |
 
@@ -43,6 +44,7 @@ Header.Payload.Signature
 | `jti` | Always | 401 if missing or empty string; if replay detection is enabled, 401 on reused `jti` |
 | `iss` | If `SERVICE_AUTH_JWT_ISSUER` env is set | 401 if value doesn't match `SERVICE_AUTH_JWT_ISSUER` |
 | `aud` | If `SERVICE_AUTH_JWT_AUDIENCE` env is set (recommended in production) | 401 if value doesn't contain `SERVICE_AUTH_JWT_AUDIENCE` |
+| `kid` | Optional | Used to select the matching key from JWKS; if absent, all keys in the set are tried |
 | `scope` | Optional | Used for permission checks if present |
 
 ## Implementation
@@ -121,6 +123,112 @@ def verify_service_token(token: str, public_key: str,
 ```
 
 If replay protection is required, `replay_cache` must be backed by a shared store such as Redis with `SETNX`-style semantics and a TTL lasting until `exp`. A bare `jti` claim by itself is not enough to stop token replay.
+
+### Verifying with JWKS
+
+In JWKS mode, the receiver fetches public keys dynamically from the issuer instead of holding a static key file. Keys are cached for 5 minutes.
+
+```python
+import time
+import threading
+import urllib.request
+import json
+
+_jwks_cache: dict[str, tuple[list, float]] = {}  # client -> (keys, fetched_at)
+_jwks_lock = threading.Lock()
+JWKS_CACHE_TTL = 300  # 5 minutes
+
+def _fetch_jwks(client: str, url_template: str) -> list:
+    url = url_template.replace("{client}", client)
+    with urllib.request.urlopen(url, timeout=5) as resp:
+        return json.loads(resp.read())["keys"]
+
+def get_jwks_keys(client: str, url_template: str) -> list:
+    with _jwks_lock:
+        cached = _jwks_cache.get(client)
+        if cached and time.time() - cached[1] < JWKS_CACHE_TTL:
+            return cached[0]
+        keys = _fetch_jwks(client, url_template)
+        _jwks_cache[client] = (keys, time.time())
+        return keys
+
+def verify_service_token_jwks(token: str,
+                               allowed_clients: set[str],
+                               url_template: str,
+                               expected_audience: str | None,
+                               jwt_expiration: int,
+                               jwt_clock_skew: int = 60,
+                               replay_cache=None) -> dict:
+    header = jwt.get_unverified_header(token)
+    issuer = jwt.decode(token, options={"verify_signature": False}).get("iss")
+
+    if issuer not in allowed_clients:
+        raise AuthError(f"Issuer {issuer} not in allowed clients")
+
+    keys = get_jwks_keys(issuer, url_template)
+    kid = header.get("kid")
+
+    # Filter by kid if present, otherwise try all keys
+    candidates = [k for k in keys if not kid or k.get("kid") == kid]
+    if not candidates:
+        raise AuthError(f"No matching key found for kid={kid}")
+
+    last_error = None
+    for jwk in candidates:
+        try:
+            public_key = jwt.algorithms.RSAAlgorithm.from_jwk(jwk)
+            payload = jwt.decode(
+                token,
+                public_key,
+                algorithms=["RS256"],
+                audience=expected_audience if expected_audience else None,
+                options={
+                    "require": ["exp", "iat", "jti"],
+                    "verify_aud": bool(expected_audience),
+                }
+            )
+            # Same iat/jti/replay checks as verify_service_token
+            now = int(time.time())
+            if payload["iat"] > now + jwt_clock_skew:
+                raise AuthError("Token issued in the future")
+            if now - payload["iat"] > jwt_expiration + jwt_clock_skew:
+                raise AuthError("Token too old")
+            jti = payload.get("jti")
+            if not jti:
+                raise AuthError("Missing jti")
+            if replay_cache is not None:
+                ttl = max(1, int(payload["exp"] - now))
+                if not replay_cache.mark_first_seen(jti, ttl=ttl):
+                    raise AuthError("Replay detected")
+            return payload
+        except (jwt.InvalidTokenError, AuthError) as e:
+            last_error = e
+
+    raise AuthError(f"Token verification failed: {last_error}")
+```
+
+JWKS may contain multiple keys (for key rotation). If `kid` is present, only the matching key is used; otherwise all keys are tried in order.
+
+### JWKS Endpoint (Issuer requirement)
+
+In JWKS mode, the issuer **must** expose `GET /.well-known/jwks.json` returning active public keys in JWK Set format (RFC 7517). During key rotation, the old key must remain in JWKS until all tokens it signed have expired — i.e., at least `SERVICE_AUTH_JWT_EXPIRATION` seconds after the rotation.
+
+Example response:
+
+```json
+{
+  "keys": [
+    {
+      "kty": "RSA",
+      "use": "sig",
+      "kid": "2024-01-key",
+      "alg": "RS256",
+      "n": "...",
+      "e": "AQAB"
+    }
+  ]
+}
+```
 
 ### FastAPI Middleware
 
@@ -229,7 +337,7 @@ SERVICE_AUTH_JWT_EXPIRATION=3600
 SERVICE_AUTH_JWT_PRIVATE_KEY_PATH=/etc/keys/private.pem
 ```
 
-**Receiver** (verifies tokens, holds only the public key):
+**Receiver — Static Public Key mode** (verifies tokens using a local public key file):
 
 ```
 SERVICE_AUTH_JWT_ALGORITHM=RS256
@@ -237,6 +345,21 @@ SERVICE_AUTH_JWT_AUDIENCE=target-service
 SERVICE_AUTH_JWT_CLOCK_SKEW=60
 SERVICE_AUTH_JWT_PUBLIC_KEY_PATH=/etc/keys/public.pem
 ```
+
+**Receiver — JWKS mode** (fetches public keys dynamically from the issuer):
+
+```
+SERVICE_AUTH_JWT_ALGORITHM=RS256
+SERVICE_AUTH_JWT_AUDIENCE=target-service
+SERVICE_AUTH_JWT_CLOCK_SKEW=60
+SERVICE_AUTH_JWT_JWKS_CLIENTS=service-a,service-b
+SERVICE_AUTH_JWT_JWKS_URL_TEMPLATE=https://{client}/.well-known/jwks.json
+```
+
+Mode selection rules:
+- If `PUBLIC_KEY_PATH` is set → Static Public Key mode
+- If `JWKS_CLIENTS` and `JWKS_URL_TEMPLATE` are set → JWKS mode
+- If both or neither are set → service must fail at startup with a configuration error
 
 ## Monitoring
 
@@ -246,6 +369,8 @@ service_jwt_verification_total{result="success|failure"} (counter)
 service_jwt_verification_duration_seconds (histogram)
 service_jwt_token_cache_hits_total (counter)
 service_jwt_token_cache_misses_total (counter)
+service_jwt_jwks_fetch_total{client="...", result="success|failure"} (counter)
+service_jwt_jwks_cache_hits_total{client="..."} (counter)
 ```
 
 ## Best Practices
@@ -258,6 +383,8 @@ service_jwt_token_cache_misses_total (counter)
 * Rotate key pairs regularly (every 90 days)
 * Log all verification failures with token metadata (not the token itself)
 * Reject tokens whose `iat` is in the future beyond allowed clock skew
+* In JWKS mode, include `kid` in the JWT header for efficient key selection
+* Keep all active keys in JWKS during rotation (overlap period = token lifetime)
 
 ❌ **Don't**
 * Use symmetric HMAC (HS256) — requires sharing the secret
@@ -265,6 +392,7 @@ service_jwt_token_cache_misses_total (counter)
 * Log or expose raw token values
 * Trust tokens without verifying the signature
 * Skip `aud` (audience) validation in production
+* Remove a key from JWKS before all tokens it signed have expired
 
 ## Pros and Cons
 
