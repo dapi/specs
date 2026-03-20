@@ -51,280 +51,45 @@ Header.Payload.Signature
 
 ### Creating a Service Token
 
-```python
-import jwt
-import time
-import uuid
+The issuer builds a payload with `iss`, `sub`, `aud`, `exp`, `iat`, `jti`, and optionally `scope`, then signs it with RS256 using the service's private key. The `jti` must be a UUID v4 or equivalent globally unique value.
 
-def create_service_token(service_name: str, target_service: str,
-                         private_key: str, scopes: list[str]) -> str:
-    payload = {
-        "iss": service_name,
-        "sub": service_name,
-        "aud": target_service,
-        "exp": int(time.time()) + 3600,   # 1 hour
-        "iat": int(time.time()),
-        "jti": str(uuid.uuid4()),
-        "scope": scopes
-    }
-    return jwt.encode(payload, private_key, algorithm="RS256")
-```
+### Verifying a Service Token (Static Public Key mode)
 
-### Verifying a Service Token
+The receiver decodes and verifies the token using the issuer's public key:
 
-```python
-def verify_service_token(token: str, public_key: str,
-                         expected_audience: str | None,
-                         allowed_issuers: set[str],
-                         jwt_expiration: int,
-                         jwt_clock_skew: int = 60,
-                         replay_cache=None) -> dict:
-    try:
-        payload = jwt.decode(
-            token,
-            public_key,
-            algorithms=["RS256"],
-            audience=expected_audience if expected_audience else None,
-            options={
-                "require": ["exp", "iat", "jti"],
-                "verify_aud": bool(expected_audience),
-            }
-        )
+1. Verify RS256 signature against the configured public key.
+2. Reject if `exp` is in the past.
+3. Reject if `iat` is in the future beyond `SERVICE_AUTH_JWT_CLOCK_SKEW`.
+4. Reject if `now - iat > SERVICE_AUTH_JWT_EXPIRATION + SERVICE_AUTH_JWT_CLOCK_SKEW` (age check independent of `exp`).
+5. Reject if `jti` is missing or empty.
+6. Reject if `iss` is not in the allowed issuers set.
+7. If replay detection is enabled: reject if `jti` has been seen before; otherwise mark it as seen with TTL = `exp - now`.
 
-        now = int(time.time())
-        if payload["iat"] > now + jwt_clock_skew:
-            raise AuthError("Token issued in the future")
-
-        # iat-based age check — reject even if exp is still valid
-        age = now - payload["iat"]
-        if age > jwt_expiration + jwt_clock_skew:
-            raise AuthError("Token too old")
-
-        jti = payload.get("jti")
-        if not jti:
-            raise AuthError("Missing jti")
-
-        if allowed_issuers and payload.get("iss") not in allowed_issuers:
-            raise AuthError(f"Issuer {payload.get('iss')} not allowed")
-
-        if replay_cache is not None:
-            ttl = max(1, int(payload["exp"] - now))
-            if not replay_cache.mark_first_seen(jti, ttl=ttl):
-                raise AuthError("Replay detected")
-
-        return payload
-
-    except jwt.ExpiredSignatureError:
-        raise AuthError("Token expired")
-    except jwt.InvalidIssuerError:
-        raise AuthError("Invalid issuer")
-    except jwt.InvalidTokenError as e:
-        raise AuthError(f"Invalid token: {e}")
-```
-
-If replay protection is required, `replay_cache` must be backed by a shared store such as Redis with `SETNX`-style semantics and a TTL lasting until `exp`. A bare `jti` claim by itself is not enough to stop token replay.
+If replay protection is required, the seen-jti store must be a shared store (e.g., Redis with `SETNX`-style semantics) with TTL lasting until `exp`. A bare `jti` claim by itself is not enough to stop token replay.
 
 ### Verifying with JWKS
 
-In JWKS mode, the receiver fetches public keys dynamically from the issuer instead of holding a static key file. Keys are cached for 5 minutes.
+In JWKS mode, the receiver fetches public keys dynamically from the issuer instead of holding a static key file. Keys are cached in memory for 5 minutes (fixed TTL, not configurable).
 
-```python
-import time
-import threading
-import urllib.request
-import json
+Verification steps:
 
-_jwks_cache: dict[str, tuple[list, float]] = {}  # client -> (keys, fetched_at)
-_jwks_lock = threading.Lock()
-JWKS_CACHE_TTL = 300  # 5 minutes
+1. Extract `iss` from the token (without verifying the signature).
+2. Reject if `iss` is not in `SERVICE_AUTH_JWT_JWKS_CLIENTS`.
+3. Fetch the JWKS from `SERVICE_AUTH_JWT_JWKS_URL_TEMPLATE` (substituting `{client}` with `iss`), or return the cached result if still fresh.
+4. If `kid` is present in the token header, select only the key with the matching `kid`; otherwise try all keys in the set.
+5. Attempt signature verification with each candidate key in order. Stop at first success.
+6. Apply the same `iat`/`exp`/`jti`/replay checks as in Static Public Key mode.
+7. Return the verified payload, or 401 if no candidate key succeeds.
 
-def _fetch_jwks(client: str, url_template: str) -> list:
-    url = url_template.replace("{client}", client)
-    with urllib.request.urlopen(url, timeout=5) as resp:
-        return json.loads(resp.read())["keys"]
-
-def get_jwks_keys(client: str, url_template: str) -> list:
-    with _jwks_lock:
-        cached = _jwks_cache.get(client)
-        if cached and time.time() - cached[1] < JWKS_CACHE_TTL:
-            return cached[0]
-        keys = _fetch_jwks(client, url_template)
-        _jwks_cache[client] = (keys, time.time())
-        return keys
-
-def verify_service_token_jwks(token: str,
-                               allowed_clients: set[str],
-                               url_template: str,
-                               expected_audience: str | None,
-                               jwt_expiration: int,
-                               jwt_clock_skew: int = 60,
-                               replay_cache=None) -> dict:
-    header = jwt.get_unverified_header(token)
-    issuer = jwt.decode(token, options={"verify_signature": False}).get("iss")
-
-    if issuer not in allowed_clients:
-        raise AuthError(f"Issuer {issuer} not in allowed clients")
-
-    keys = get_jwks_keys(issuer, url_template)
-    kid = header.get("kid")
-
-    # Filter by kid if present, otherwise try all keys
-    candidates = [k for k in keys if not kid or k.get("kid") == kid]
-    if not candidates:
-        raise AuthError(f"No matching key found for kid={kid}")
-
-    last_error = None
-    for jwk in candidates:
-        try:
-            public_key = jwt.algorithms.RSAAlgorithm.from_jwk(jwk)
-            payload = jwt.decode(
-                token,
-                public_key,
-                algorithms=["RS256"],
-                audience=expected_audience if expected_audience else None,
-                options={
-                    "require": ["exp", "iat", "jti"],
-                    "verify_aud": bool(expected_audience),
-                }
-            )
-            # Same iat/jti/replay checks as verify_service_token
-            now = int(time.time())
-            if payload["iat"] > now + jwt_clock_skew:
-                raise AuthError("Token issued in the future")
-            if now - payload["iat"] > jwt_expiration + jwt_clock_skew:
-                raise AuthError("Token too old")
-            jti = payload.get("jti")
-            if not jti:
-                raise AuthError("Missing jti")
-            if replay_cache is not None:
-                ttl = max(1, int(payload["exp"] - now))
-                if not replay_cache.mark_first_seen(jti, ttl=ttl):
-                    raise AuthError("Replay detected")
-            return payload
-        except (jwt.InvalidTokenError, AuthError) as e:
-            last_error = e
-
-    raise AuthError(f"Token verification failed: {last_error}")
-```
-
-JWKS may contain multiple keys (for key rotation). If `kid` is present, only the matching key is used; otherwise all keys are tried in order.
+JWKS may contain multiple keys to support key rotation. If `kid` is specified, only the matching key is tried; otherwise all keys are attempted.
 
 ### JWKS Endpoint (Issuer requirement)
 
 In JWKS mode, the issuer **must** expose `GET /.well-known/jwks.json` returning active public keys in JWK Set format (RFC 7517). During key rotation, the old key must remain in JWKS until all tokens it signed have expired — i.e., at least `SERVICE_AUTH_JWT_EXPIRATION` seconds after the rotation.
 
-Example response:
+### Token Caching (Issuer side)
 
-```json
-{
-  "keys": [
-    {
-      "kty": "RSA",
-      "use": "sig",
-      "kid": "2024-01-key",
-      "alg": "RS256",
-      "n": "...",
-      "e": "AQAB"
-    }
-  ]
-}
-```
-
-### FastAPI Middleware
-
-```python
-from fastapi import FastAPI, Depends, HTTPException, Security
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
-app = FastAPI()
-security = HTTPBearer()
-
-PUBLIC_KEY = open("/etc/keys/public.pem").read()
-ALLOWED_SERVICES = {"service-a", "service-b", "service-c"}
-
-def get_service(
-    credentials: HTTPAuthorizationCredentials = Security(security)
-) -> dict:
-    payload = verify_service_token(
-        token=credentials.credentials,
-        public_key=PUBLIC_KEY,
-        expected_audience="target-service",
-        allowed_issuers=ALLOWED_SERVICES,
-        jwt_expiration=3600,
-        jwt_clock_skew=60,
-    )
-    return payload
-
-@app.get("/api/data")
-async def get_data(service: dict = Depends(get_service)):
-    return {"message": f"Hello from {service['iss']}"}
-```
-
-### Centralized Auth Middleware
-
-```python
-@app.middleware("http")
-async def auth_middleware(request: Request, call_next):
-    if request.url.path in ["/health", "/live", "/ready"]:
-        return await call_next(request)
-
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        return JSONResponse(status_code=401,
-                            content={"error": "Missing authorization header"})
-
-    try:
-        payload = verify_service_token(
-            token=auth_header.removeprefix("Bearer "),
-            public_key=PUBLIC_KEY,
-            expected_audience="this-service",
-            allowed_issuers=ALLOWED_SERVICES,
-            jwt_expiration=3600,
-            jwt_clock_skew=60,
-        )
-        request.state.service_name = payload["iss"]
-        request.state.scopes = payload.get("scope", [])
-    except AuthError as e:
-        return JSONResponse(status_code=401, content={"error": str(e)})
-
-    return await call_next(request)
-```
-
-## Token Caching
-
-To avoid creating a new token on every request, cache tokens until just before expiry:
-
-```python
-import threading
-from dataclasses import dataclass
-
-@dataclass
-class CachedToken:
-    token: str
-    expires_at: float
-
-_token_cache: dict[str, CachedToken] = {}
-_lock = threading.Lock()
-
-def get_service_token(target_service: str) -> str:
-    with _lock:
-        cached = _token_cache.get(target_service)
-        # Refresh 60 seconds before expiry
-        if cached and cached.expires_at > time.time() + 60:
-            return cached.token
-
-        token = create_service_token(
-            service_name=MY_SERVICE_NAME,
-            target_service=target_service,
-            private_key=PRIVATE_KEY,
-            scopes=["read"]
-        )
-        _token_cache[target_service] = CachedToken(
-            token=token,
-            expires_at=time.time() + 3600
-        )
-        return token
-```
+To avoid creating a new token on every outgoing request, the issuer should cache tokens and reuse them until shortly before expiry (e.g., refresh 60 seconds before `exp`). The cache is keyed by target service name and held in process memory.
 
 ## Configuration
 

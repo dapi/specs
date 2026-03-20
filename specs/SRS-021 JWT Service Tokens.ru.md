@@ -51,280 +51,45 @@ Header.Payload.Signature
 
 ### Создание service token
 
-```python
-import jwt
-import time
-import uuid
+Issuer формирует payload с полями `iss`, `sub`, `aud`, `exp`, `iat`, `jti` и опционально `scope`, затем подписывает его алгоритмом RS256 с использованием приватного ключа сервиса. Значение `jti` должно быть UUID v4 или аналогичным глобально уникальным идентификатором.
 
-def create_service_token(service_name: str, target_service: str,
-                         private_key: str, scopes: list[str]) -> str:
-    payload = {
-        "iss": service_name,
-        "sub": service_name,
-        "aud": target_service,
-        "exp": int(time.time()) + 3600,   # 1 час
-        "iat": int(time.time()),
-        "jti": str(uuid.uuid4()),
-        "scope": scopes
-    }
-    return jwt.encode(payload, private_key, algorithm="RS256")
-```
+### Проверка service token (режим Static Public Key)
 
-### Проверка service token
+Receiver декодирует и проверяет токен с помощью публичного ключа issuer-а:
 
-```python
-def verify_service_token(token: str, public_key: str,
-                         expected_audience: str | None,
-                         allowed_issuers: set[str],
-                         jwt_expiration: int,
-                         jwt_clock_skew: int = 60,
-                         replay_cache=None) -> dict:
-    try:
-        payload = jwt.decode(
-            token,
-            public_key,
-            algorithms=["RS256"],
-            audience=expected_audience if expected_audience else None,
-            options={
-                "require": ["exp", "iat", "jti"],
-                "verify_aud": bool(expected_audience),
-            }
-        )
+1. Проверить подпись RS256 с помощью сконфигурированного публичного ключа.
+2. Отклонить, если `exp` в прошлом.
+3. Отклонить, если `iat` в будущем дальше `SERVICE_AUTH_JWT_CLOCK_SKEW`.
+4. Отклонить, если `now - iat > SERVICE_AUTH_JWT_EXPIRATION + SERVICE_AUTH_JWT_CLOCK_SKEW` (проверка возраста независимо от `exp`).
+5. Отклонить, если `jti` отсутствует или пустой.
+6. Отклонить, если `iss` не входит в список разрешённых issuer-ов.
+7. Если включена replay-защита: отклонить, если `jti` уже встречался; иначе пометить как использованный с TTL = `exp - now`.
 
-        now = int(time.time())
-        if payload["iat"] > now + jwt_clock_skew:
-            raise AuthError("Токен выдан в будущем")
-
-        # Проверка возраста по iat — отклоняем даже если exp ещё не истёк
-        age = now - payload["iat"]
-        if age > jwt_expiration + jwt_clock_skew:
-            raise AuthError("Токен слишком старый")
-
-        jti = payload.get("jti")
-        if not jti:
-            raise AuthError("Отсутствует jti")
-
-        if allowed_issuers and payload.get("iss") not in allowed_issuers:
-            raise AuthError(f"Issuer {payload.get('iss')} не разрешён")
-
-        if replay_cache is not None:
-            ttl = max(1, int(payload["exp"] - now))
-            if not replay_cache.mark_first_seen(jti, ttl=ttl):
-                raise AuthError("Обнаружен replay")
-
-        return payload
-
-    except jwt.ExpiredSignatureError:
-        raise AuthError("Токен истёк")
-    except jwt.InvalidIssuerError:
-        raise AuthError("Неверный issuer")
-    except jwt.InvalidTokenError as e:
-        raise AuthError(f"Невалидный токен: {e}")
-```
-
-Если требуется защита от replay, `replay_cache` должен быть реализован поверх общего хранилища вроде Redis с семантикой `SETNX` и TTL до `exp`. Наличие одного только `jti` не предотвращает повторное использование токена.
+Если требуется защита от replay, хранилище использованных `jti` должно быть общим (например, Redis с семантикой `SETNX`) с TTL до `exp`. Наличие одного только `jti` не предотвращает повторное использование токена.
 
 ### Проверка через JWKS
 
-В JWKS-режиме receiver получает публичные ключи динамически от issuer-а, не храня статический файл ключа. Ключи кэшируются в памяти на 5 минут.
+В JWKS-режиме receiver получает публичные ключи динамически от issuer-а, не храня статический файл ключа. Ключи кэшируются в памяти на 5 минут (фиксированный TTL, не конфигурируется).
 
-```python
-import time
-import threading
-import urllib.request
-import json
+Шаги проверки:
 
-_jwks_cache: dict[str, tuple[list, float]] = {}  # client -> (keys, fetched_at)
-_jwks_lock = threading.Lock()
-JWKS_CACHE_TTL = 300  # 5 минут
+1. Извлечь `iss` из токена (без проверки подписи).
+2. Отклонить, если `iss` не входит в `SERVICE_AUTH_JWT_JWKS_CLIENTS`.
+3. Получить JWKS по URL из `SERVICE_AUTH_JWT_JWKS_URL_TEMPLATE` (подставив `{client}` = `iss`), или вернуть кэшированный результат, если он ещё свежий.
+4. Если в заголовке токена задан `kid` — выбрать только ключ с совпадающим `kid`; иначе перебрать все ключи набора.
+5. Попытаться проверить подпись каждым ключом-кандидатом по очереди. Остановиться на первом успешном.
+6. Применить те же проверки `iat`/`exp`/`jti`/replay, что и в режиме Static Public Key.
+7. Вернуть верифицированный payload или 401, если ни один ключ не подошёл.
 
-def _fetch_jwks(client: str, url_template: str) -> list:
-    url = url_template.replace("{client}", client)
-    with urllib.request.urlopen(url, timeout=5) as resp:
-        return json.loads(resp.read())["keys"]
-
-def get_jwks_keys(client: str, url_template: str) -> list:
-    with _jwks_lock:
-        cached = _jwks_cache.get(client)
-        if cached and time.time() - cached[1] < JWKS_CACHE_TTL:
-            return cached[0]
-        keys = _fetch_jwks(client, url_template)
-        _jwks_cache[client] = (keys, time.time())
-        return keys
-
-def verify_service_token_jwks(token: str,
-                               allowed_clients: set[str],
-                               url_template: str,
-                               expected_audience: str | None,
-                               jwt_expiration: int,
-                               jwt_clock_skew: int = 60,
-                               replay_cache=None) -> dict:
-    header = jwt.get_unverified_header(token)
-    issuer = jwt.decode(token, options={"verify_signature": False}).get("iss")
-
-    if issuer not in allowed_clients:
-        raise AuthError(f"Issuer {issuer} не в списке разрешённых клиентов")
-
-    keys = get_jwks_keys(issuer, url_template)
-    kid = header.get("kid")
-
-    # Фильтруем по kid если задан, иначе перебираем все ключи
-    candidates = [k for k in keys if not kid or k.get("kid") == kid]
-    if not candidates:
-        raise AuthError(f"Не найден ключ для kid={kid}")
-
-    last_error = None
-    for jwk in candidates:
-        try:
-            public_key = jwt.algorithms.RSAAlgorithm.from_jwk(jwk)
-            payload = jwt.decode(
-                token,
-                public_key,
-                algorithms=["RS256"],
-                audience=expected_audience if expected_audience else None,
-                options={
-                    "require": ["exp", "iat", "jti"],
-                    "verify_aud": bool(expected_audience),
-                }
-            )
-            # Те же проверки iat/jti/replay что и в verify_service_token
-            now = int(time.time())
-            if payload["iat"] > now + jwt_clock_skew:
-                raise AuthError("Токен выдан в будущем")
-            if now - payload["iat"] > jwt_expiration + jwt_clock_skew:
-                raise AuthError("Токен слишком старый")
-            jti = payload.get("jti")
-            if not jti:
-                raise AuthError("Отсутствует jti")
-            if replay_cache is not None:
-                ttl = max(1, int(payload["exp"] - now))
-                if not replay_cache.mark_first_seen(jti, ttl=ttl):
-                    raise AuthError("Обнаружен replay")
-            return payload
-        except (jwt.InvalidTokenError, AuthError) as e:
-            last_error = e
-
-    raise AuthError(f"Проверка токена не прошла: {last_error}")
-```
-
-JWKS может содержать несколько ключей (ротация). Если `kid` задан — используется только совпадающий ключ; если нет — перебираются все по очереди.
+JWKS может содержать несколько ключей для поддержки ротации. Если `kid` задан — используется только совпадающий ключ; иначе перебираются все.
 
 ### JWKS-эндпоинт (требование к issuer)
 
 В JWKS-режиме issuer **обязан** предоставлять `GET /.well-known/jwks.json`, возвращающий действующие публичные ключи в формате JWK Set (RFC 7517). При ротации ключей старый ключ должен оставаться в JWKS до истечения всех выданных им токенов — то есть не менее `SERVICE_AUTH_JWT_EXPIRATION` секунд после смены.
 
-Пример ответа:
+### Кэширование токенов (на стороне issuer)
 
-```json
-{
-  "keys": [
-    {
-      "kty": "RSA",
-      "use": "sig",
-      "kid": "2024-01-key",
-      "alg": "RS256",
-      "n": "...",
-      "e": "AQAB"
-    }
-  ]
-}
-```
-
-### FastAPI Middleware
-
-```python
-from fastapi import FastAPI, Depends, HTTPException, Security
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
-app = FastAPI()
-security = HTTPBearer()
-
-PUBLIC_KEY = open("/etc/keys/public.pem").read()
-ALLOWED_SERVICES = {"service-a", "service-b", "service-c"}
-
-def get_service(
-    credentials: HTTPAuthorizationCredentials = Security(security)
-) -> dict:
-    payload = verify_service_token(
-        token=credentials.credentials,
-        public_key=PUBLIC_KEY,
-        expected_audience="target-service",
-        allowed_issuers=ALLOWED_SERVICES,
-        jwt_expiration=3600,
-        jwt_clock_skew=60,
-    )
-    return payload
-
-@app.get("/api/data")
-async def get_data(service: dict = Depends(get_service)):
-    return {"message": f"Hello from {service['iss']}"}
-```
-
-### Централизованный auth middleware
-
-```python
-@app.middleware("http")
-async def auth_middleware(request: Request, call_next):
-    if request.url.path in ["/health", "/live", "/ready"]:
-        return await call_next(request)
-
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        return JSONResponse(status_code=401,
-                            content={"error": "Отсутствует заголовок авторизации"})
-
-    try:
-        payload = verify_service_token(
-            token=auth_header.removeprefix("Bearer "),
-            public_key=PUBLIC_KEY,
-            expected_audience="this-service",
-            allowed_issuers=ALLOWED_SERVICES,
-            jwt_expiration=3600,
-            jwt_clock_skew=60,
-        )
-        request.state.service_name = payload["iss"]
-        request.state.scopes = payload.get("scope", [])
-    except AuthError as e:
-        return JSONResponse(status_code=401, content={"error": str(e)})
-
-    return await call_next(request)
-```
-
-## Кэширование токенов
-
-Чтобы не создавать новый токен при каждом запросе, кэшируйте токены до истечения срока:
-
-```python
-import threading
-from dataclasses import dataclass
-
-@dataclass
-class CachedToken:
-    token: str
-    expires_at: float
-
-_token_cache: dict[str, CachedToken] = {}
-_lock = threading.Lock()
-
-def get_service_token(target_service: str) -> str:
-    with _lock:
-        cached = _token_cache.get(target_service)
-        # Обновляем за 60 секунд до истечения
-        if cached and cached.expires_at > time.time() + 60:
-            return cached.token
-
-        token = create_service_token(
-            service_name=MY_SERVICE_NAME,
-            target_service=target_service,
-            private_key=PRIVATE_KEY,
-            scopes=["read"]
-        )
-        _token_cache[target_service] = CachedToken(
-            token=token,
-            expires_at=time.time() + 3600
-        )
-        return token
-```
+Чтобы не создавать новый токен при каждом исходящем запросе, issuer должен кэшировать токены и переиспользовать их до момента близкого к истечению (например, обновлять за 60 секунд до `exp`). Кэш ключируется по имени целевого сервиса и хранится в памяти процесса.
 
 ## Конфигурация
 
