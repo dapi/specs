@@ -67,6 +67,29 @@ Receiver декодирует и проверяет токен с помощью
 
 Если требуется защита от replay, хранилище использованных `jti` должно быть общим (например, Redis с семантикой `SETNX`) с TTL до `exp`. Наличие одного только `jti` не предотвращает повторное использование токена.
 
+### JWKS Flow
+
+```
+Issuer                     Receiver                  Issuer JWKS
+  |                            |                          |
+  |--- POST /api (JWT) ------->|                          |
+  |                            |-- read iss from header   |
+  |                            |                          |
+  |                            |  [cache miss]            |
+  |                            |--- GET /.well-known/ --->|
+  |                            |       jwks.json          |
+  |                            |<-- { keys: [...] } ------|
+  |                            |-- store in memory cache  |
+  |                            |   (TTL = 5 min)          |
+  |                            |                          |
+  |                            |  [cache hit]             |
+  |                            |-- read from cache        |
+  |                            |                          |
+  |                            |-- verify signature       |
+  |                            |-- validate claims        |
+  |<-- 200 OK / 401 Unauth. ---|                          |
+```
+
 ### Проверка через JWKS
 
 В JWKS-режиме receiver получает публичные ключи динамически от issuer-а, не храня статический файл ключа. Ключи кэшируются в памяти на 5 минут (фиксированный TTL, не конфигурируется).
@@ -125,6 +148,30 @@ SERVICE_AUTH_JWT_JWKS_URL_TEMPLATE=https://{client}/.well-known/jwks.json
 - Если задан `PUBLIC_KEY_PATH` → режим Static Public Key
 - Если заданы `JWKS_CLIENTS` и `JWKS_URL_TEMPLATE` → JWKS-режим
 - Если заданы оба (или ни одного) → сервис должен завершить запуск с ошибкой конфигурации
+
+## Рекомендуемые библиотеки
+
+### Python
+
+| Роль | Библиотека | Примечание |
+|------|-----------|-----------|
+| Issuer + Receiver | `PyJWT` + `cryptography` | RS256, поддержка JWK через `jwt.algorithms.RSAAlgorithm.from_jwk()` |
+| Receiver (JWKS) | `python-jose` | Встроенная поддержка JWKS fetch и кэширования |
+
+### Node.js
+
+| Роль | Библиотека | Примечание |
+|------|-----------|-----------|
+| Issuer + Receiver | `jsonwebtoken` | Стандарт де-факто, RS256, без встроенного JWKS |
+| Receiver (JWKS) | `jwks-rsa` | JWKS fetch и кэш, интегрируется с `jsonwebtoken` |
+| Receiver (JWKS) | `jose` | Полная поддержка JWKS, современный API, ESM/CJS |
+
+### Go
+
+| Роль | Библиотека | Примечание |
+|------|-----------|-----------|
+| Issuer + Receiver | `golang-jwt/jwt` | Стандарт для Go, RS256 |
+| Receiver (JWKS) | `MicahParks/keyfunc` | JWKS fetch и кэш, интегрируется с `golang-jwt/jwt` |
 
 ## Мониторинг
 
